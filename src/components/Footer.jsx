@@ -50,9 +50,8 @@ const Footer = () => {
               </div>
             </div>
             <p className="font-inter text-gray-200 mb-3 sm:mb-5 leading-relaxed text-xs sm:text-sm">
-              Desa yang kaya akan hasil bumi dan budaya, berkomitmen untuk
-              kemajuan dan kesejahteraan masyarakat melalui inovasi dan gotong
-              royong.
+              Padukuhan yang kaya akan hasil bumi, berkomitmen untuk kemajuan
+              dan kesejahteraan masyarakat melalui inovasi dan gotong royong.
             </p>
             <div className="flex space-x-2 sm:space-x-3">
               {[
@@ -142,7 +141,7 @@ const Footer = () => {
                   style={{ color: colorPalette.accent }}
                 />
                 <span className="font-inter text-gray-200 text-xs sm:text-sm">
-                  info@pakel.desa.id
+                  info@pakel.padukuhan.id
                 </span>
               </div>
             </div>

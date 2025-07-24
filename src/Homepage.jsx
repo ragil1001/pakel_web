@@ -17,11 +17,41 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colorPalette } from "./colors";
+import { getUmkms, getNews, getGallery } from "./firebaseUtils";
 
 const Homepage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeSection, setActiveSection] = useState("beranda");
+  const [umkmProducts, setUmkmProducts] = useState([]);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [newsItems, setNewsItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch UMKM data
+        const umkms = await getUmkms();
+        setUmkmProducts(umkms.slice(0, 3)); // Limit to 3 for display
+
+        // Fetch Gallery data
+        const gallery = await getGallery();
+        setGalleryImages(gallery.slice(0, 4)); // Limit to 4 for display
+
+        // Fetch News data
+        const news = await getNews();
+        setNewsItems(news.slice(0, 3)); // Limit to 3 for display
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,85 +77,34 @@ const Homepage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const umkmProducts = [
-    {
-      id: 1,
-      name: "Jagung Manis Segar",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=300&fit=crop",
-      description: "Jagung manis berkualitas tinggi hasil panen lokal",
-      price: "Rp 15.000/kg",
-    },
-    {
-      id: 2,
-      name: "Singkong Premium",
-      image:
-        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=300&fit=crop",
-      description: "Singkong segar pilihan dengan kualitas terbaik",
-      price: "Rp 8.000/kg",
-    },
-    {
-      id: 3,
-      name: "Keripik Singkong",
-      image:
-        "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=300&fit=crop",
-      description: "Keripik singkong renyah dengan berbagai rasa",
-      price: "Rp 25.000/pack",
-    },
-  ];
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "Unknown Date";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const options = { day: "numeric", month: "long", year: "numeric" };
+    return date.toLocaleDateString("id-ID", options);
+  };
 
-  const galleryImages = [
-    {
-      src: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=300&fit=crop",
-      title: "Panen Raya Jagung",
-      description: "Kegiatan panen raya jagung bersama masyarakat",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop",
-      title: "Gotong Royong",
-      description: "Kegiatan gotong royong pembangunan infrastruktur desa",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
-      title: "Pelatihan Pertanian",
-      description: "Pelatihan teknik pertanian modern untuk petani",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=300&fit=crop",
-      title: "Festival Panen",
-      description: "Festival panen tahunan dengan berbagai lomba",
-    },
-  ];
-
-  const newsItems = [
-    {
-      type: "Pengumuman",
-      title: "Panen Raya Jagung 2025",
-      content:
-        "Kegiatan panen raya jagung akan dilaksanakan pada tanggal 15 Juni 2025...",
-      date: "10 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=300&fit=crop",
-    },
-    {
-      type: "Berita",
-      title: "Pembukaan UMKM Baru",
-      content:
-        "Tiga UMKM baru telah dibuka di desa untuk mendukung perekonomian...",
-      date: "8 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=300&fit=crop",
-    },
-    {
-      type: "Kegiatan",
-      title: "Pelatihan Pertanian Modern",
-      content:
-        "Pelatihan teknik pertanian modern untuk meningkatkan hasil panen...",
-      date: "5 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=300&fit=crop",
-    },
-  ];
+  // Fungsi untuk format harga berdasarkan varian
+  const formatPrice = (variants) => {
+    if (!variants || variants.length === 0) {
+      return "Harga tidak tersedia";
+    }
+    if (variants.length === 1) {
+      return `Rp ${variants[0].price}/${variants[0].unit || "pcs"}`;
+    }
+    const prices = variants
+      .map((v) => parseFloat(v.price))
+      .filter((p) => !isNaN(p));
+    if (prices.length === 0) {
+      return "Harga tidak tersedia";
+    }
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const unit = variants[0].unit || "pcs"; // Gunakan unit dari varian pertama
+    return minPrice === maxPrice
+      ? `Rp ${minPrice}/${unit}`
+      : `Rp ${minPrice} - ${maxPrice}/${unit}`;
+  };
 
   return (
     <div style={{ backgroundColor: colorPalette.background }}>
@@ -161,7 +140,7 @@ const Homepage = () => {
             <source src="/videos/hero.mp4" type="video/mp4" />
             <img
               src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&h=1080&fit=crop"
-              alt="Fallback Pemandangan Desa Pakel"
+              alt="Fallback Pemandangan Padukuhan Pakel"
             />
           </video>
         </div>
@@ -187,8 +166,8 @@ const Homepage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Desa yang kaya akan hasil bumi dan budaya, terletak di jantung
-            Gunung Kidul, Yogyakarta.
+            Padukuhan yang kaya akan hasil bumi, terletak di jantung Gunung
+            Kidul, Yogyakarta.
           </motion.p>
           <motion.div
             className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center"
@@ -206,10 +185,9 @@ const Homepage = () => {
                 }}
                 transition={{ duration: 0.3 }}
               >
-                Jelajahi Desa
+                Jelajahi Padukuhan
               </motion.button>
             </Link>
-
             <Link to="/umkm">
               <motion.button
                 className="px-4 py-2 sm:px-6 sm:py-3 rounded-full font-inter font-semibold text-sm sm:text-base border-2"
@@ -258,8 +236,8 @@ const Homepage = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              Mengenal lebih dekat desa yang kaya akan tradisi dan kehidupan
-              agraris
+              Mengenal lebih dekat padukuhan yang kaya akan tradisi dan
+              kehidupan agraris
             </p>
           </motion.div>
           <div className="grid lg:grid-cols-2 gap-5 sm:gap-7 md:gap-12 items-center">
@@ -288,7 +266,7 @@ const Homepage = () => {
                 <span className="font-merriweather text-lg sm:text-xl md:text-2xl">
                   500 jiwa
                 </span>
-                , desa ini hidup dari denyut nadi pertanian, menghasilkan{" "}
+                , padukuhan ini hidup dari denyut nadi pertanian, menghasilkan{" "}
                 <span className="font-semibold">
                   jagung manis dan singkong premium
                 </span>{" "}
@@ -338,7 +316,7 @@ const Homepage = () => {
             >
               <img
                 src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop"
-                alt="Kehidupan Desa Pakel"
+                alt="Kehidupan Padukuhan Pakel"
                 className="w-full h-[250px] sm:h-[300px] md:h-[350px] object-cover rounded-2xl shadow-lg"
               />
               <motion.div
@@ -378,7 +356,8 @@ const Homepage = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              Komitmen untuk masa depan desa yang berkelanjutan dan sejahtera
+              Komitmen untuk masa depan padukuhan yang berkelanjutan dan
+              sejahtera
             </p>
           </motion.div>
           <div className="flex flex-col md:flex-row gap-5 sm:gap-7">
@@ -405,8 +384,8 @@ const Homepage = () => {
                 className="text-sm sm:text-base font-inter"
                 style={{ color: colorPalette.text }}
               >
-                Menjadikan Padukuhan Pakel sebagai desa mandiri, sejahtera, dan
-                berkelanjutan melalui potensi pertanian dan kearifan lokal.
+                Menjadikan Padukuhan Pakel sebagai padukuhan mandiri, sejahtera,
+                dan berkelanjutan melalui potensi pertanian dan kearifan lokal.
               </p>
             </motion.div>
             <motion.div
@@ -508,7 +487,7 @@ const Homepage = () => {
       </section>
 
       {/* UMKM Section */}
-      <section className="py-10 sm:py-14 md:py-20">
+      <section id="umkm" className="py-10 sm:py-14 md:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
             <h2
@@ -529,69 +508,73 @@ const Homepage = () => {
               viewport={{ once: true }}
             >
               Produk lokal berkualitas dari tangan-tangan kreatif masyarakat
-              desa
+              padukuhan
             </p>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-7">
-            {umkmProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10 }}
-              >
-                <div className="relative">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-40 sm:h-48 md:h-56 object-cover"
-                  />
-                  <motion.div
-                    className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full text-xs font-inter font-semibold text-white"
-                    style={{ backgroundColor: colorPalette.secondary }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    Fresh
-                  </motion.div>
-                </div>
-                <div className="p-3 sm:p-5">
-                  <h3
-                    className="text-base sm:text-lg md:text-xl font-merriweather font-bold mb-1.5"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {product.name}
-                  </h3>
-                  <p
-                    className="text-xs sm:text-sm font-inter mb-2 sm:mb-3"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {product.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="text-sm sm:text-base font-inter font-bold"
-                      style={{ color: colorPalette.primary }}
-                    >
-                      {product.price}
-                    </span>
-                    <motion.button
-                      className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-inter font-semibold text-xs sm:text-sm text-white"
-                      style={{ backgroundColor: colorPalette.primary }}
-                      whileHover={{
-                        scale: 1.05,
-                        backgroundColor: colorPalette.secondary,
-                      }}
-                    >
-                      Detail
-                    </motion.button>
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-7">
+              {umkmProducts.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden"
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -10 }}
+                >
+                  <div className="relative">
+                    <img
+                      src={
+                        product.image ||
+                        "https://via.placeholder.com/400x300?text=No+Image"
+                      }
+                      alt={product.name}
+                      className="w-full h-40 sm:h-48 md:h-56 object-cover"
+                    />
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  <div className="p-3 sm:p-5">
+                    <h3
+                      className="text-base sm:text-lg md:text-xl font-merriweather font-bold mb-1.5"
+                      style={{ color: colorPalette.text }}
+                    >
+                      {product.name}
+                    </h3>
+                    <p
+                      className="text-xs sm:text-sm font-inter mb-2 sm:mb-3"
+                      style={{ color: colorPalette.text }}
+                    >
+                      {product.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="text-sm sm:text-base font-inter font-bold"
+                        style={{ color: colorPalette.primary }}
+                      >
+                        {formatPrice(product.variants)}
+                      </span>
+                      <Link to={`/umkm/${product.id}`}>
+                        <motion.button
+                          className="px-2.5 py-1 sm:px-3.5 sm:py-1.5 rounded-full font-inter font-semibold text-xs sm:text-sm text-white"
+                          style={{ backgroundColor: colorPalette.primary }}
+                          whileHover={{
+                            scale: 1.05,
+                            backgroundColor: colorPalette.secondary,
+                          }}
+                        >
+                          Detail
+                        </motion.button>
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
           <motion.div
             className="text-center mt-6 sm:mt-12"
             initial={{ opacity: 0, y: 50 }}
@@ -615,8 +598,9 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Peta Desa */}
+      {/* Peta Padukuhan */}
       <section
+        id="peta"
         className="py-10 sm:py-14 md:py-20"
         style={{ backgroundColor: `${colorPalette.accent}10` }}
       >
@@ -630,7 +614,7 @@ const Homepage = () => {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              Peta Desa
+              Peta Padukuhan
             </h2>
             <p
               className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
@@ -676,7 +660,7 @@ const Homepage = () => {
       </section>
 
       {/* Galeri Section */}
-      <section className="py-10 sm:py-14 md:py-20">
+      <section id="galeri" className="py-10 sm:py-14 md:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
             <h2
@@ -699,70 +683,80 @@ const Homepage = () => {
               Dokumentasi momen berharga dari berbagai aktivitas masyarakat
             </p>
           </motion.div>
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : (
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              {galleryImages.map((image, index) => (
+                <motion.div
+                  key={index}
+                  className="relative overflow-hidden rounded-2xl shadow-lg"
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <img
+                    src={
+                      image.image ||
+                      "https://via.placeholder.com/400x300?text=No+Image"
+                    }
+                    alt={image.name || image.title}
+                    className="w-full h-56 sm:h-64 md:h-72 object-cover"
+                  />
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="absolute bottom-2 left-2 right-2 text-white">
+                      <h3 className="font-merriweather text-sm sm:text-base md:text-lg font-bold mb-0.5">
+                        {image.name || image.title}
+                      </h3>
+                      <p className="font-inter text-xs sm:text-xs">
+                        {image.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            className="text-center mt-6 sm:mt-12"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            {galleryImages.map((image, index) => (
-              <motion.div
-                key={index}
-                className="relative overflow-hidden rounded-2xl shadow-lg"
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                whileHover={{ scale: 1.05 }}
+            <Link to="/galeri">
+              <motion.button
+                className="px-7 py-2.5 sm:px-9 sm:py-3.5 rounded-full font-inter font-semibold text-sm sm:text-base text-white"
+                style={{ backgroundColor: colorPalette.primary }}
+                whileHover={{
+                  scale: 1.05,
+                  backgroundColor: colorPalette.secondary,
+                }}
               >
-                <img
-                  src={image.src}
-                  alt={image.title}
-                  className="w-full h-56 sm:h-64 md:h-72 object-cover"
-                />
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="absolute bottom-2 left-2 right-2 text-white">
-                    <h3 className="font-merriweather text-sm sm:text-base md:text-lg font-bold mb-0.5">
-                      {image.title}
-                    </h3>
-                    <p className="font-inter text-xs sm:text-xs">
-                      {image.description}
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
-            ))}
+                Lihat Semua Galeri
+              </motion.button>
+            </Link>
           </motion.div>
         </div>
-        <motion.div
-          className="text-center mt-6 sm:mt-12"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <Link to="/galeri">
-            <motion.button
-              className="px-7 py-2.5 sm:px-9 sm:py-3.5 rounded-full font-inter font-semibold text-sm sm:text-base text-white"
-              style={{ backgroundColor: colorPalette.primary }}
-              whileHover={{
-                scale: 1.05,
-                backgroundColor: colorPalette.secondary,
-              }}
-            >
-              Lihat Semua Galeri
-            </motion.button>
-          </Link>
-        </motion.div>
       </section>
 
       {/* Berita & Pengumuman */}
       <section
+        id="berita"
         className="py-10 sm:py-14 md:py-20"
         style={{ backgroundColor: `${colorPalette.accent}10` }}
       >
@@ -785,64 +779,74 @@ const Homepage = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              Informasi terkini tentang kegiatan dan perkembangan di desa
+              Informasi terkini tentang kegiatan dan perkembangan di padukuhan
             </p>
           </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-7">
-            {newsItems.map((news, index) => (
-              <motion.div
-                key={index}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10 }}
-              >
-                <img
-                  src={news.image}
-                  alt={news.title}
-                  className="w-full h-36 sm:h-40 md:h-44 object-cover"
-                />
-                <div className="p-3 sm:p-5">
-                  <div
-                    className="px-1.5 py-0.5 rounded-full text-xs font-inter font-semibold text-white mb-2 sm:mb-3 inline-block"
-                    style={{ backgroundColor: colorPalette.primary }}
-                  >
-                    {news.type}
-                  </div>
-                  <h3
-                    className="text-sm sm:text-base md:text-lg font-merriweather font-bold mb-1.5 sm:mb-2"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {news.title}
-                  </h3>
-                  <p
-                    className="text-xs sm:text-sm font-inter mb-2 sm:mb-3"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {news.content}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="font-inter text-xs sm:text-xs"
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-7">
+              {newsItems.map((news, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden"
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -10 }}
+                >
+                  <img
+                    src={
+                      news.image ||
+                      "https://via.placeholder.com/400x300?text=No+Image"
+                    }
+                    alt={news.title}
+                    className="w-full h-36 sm:h-40 md:h-44 object-cover"
+                  />
+                  <div className="p-3 sm:p-5">
+                    <div
+                      className="px-1.5 py-0.5 rounded-full text-xs font-inter font-semibold text-white mb-2 sm:mb-3 inline-block"
+                      style={{ backgroundColor: colorPalette.primary }}
+                    >
+                      {news.type}
+                    </div>
+                    <h3
+                      className="text-sm sm:text-base md:text-lg font-merriweather font-bold mb-1.5 sm:mb-2"
                       style={{ color: colorPalette.text }}
                     >
-                      {news.date}
-                    </span>
-                    <motion.a
-                      href="#"
-                      className="font-inter font-semibold text-xs sm:text-sm"
-                      style={{ color: colorPalette.primary }}
-                      whileHover={{ color: colorPalette.secondary }}
+                      {news.title}
+                    </h3>
+                    <p
+                      className="text-xs sm:text-sm font-inter mb-2 sm:mb-3"
+                      style={{ color: colorPalette.text }}
                     >
-                      Baca Selengkapnya
-                    </motion.a>
+                      {news.content?.substring(0, 100) + "..."}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className="font-inter text-xs sm:text-xs"
+                        style={{ color: colorPalette.text }}
+                      >
+                        {formatDate(news.createdAt)}
+                      </span>
+                      <Link to={`/blog/${news.id}`}>
+                        <motion.a
+                          className="font-inter font-semibold text-xs sm:text-sm"
+                          style={{ color: colorPalette.primary }}
+                          whileHover={{ color: colorPalette.secondary }}
+                        >
+                          Baca Selengkapnya
+                        </motion.a>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
           <motion.div
             className="text-center mt-6 sm:mt-12"
             initial={{ opacity: 0, y: 50 }}

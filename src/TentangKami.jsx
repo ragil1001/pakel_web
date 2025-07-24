@@ -40,7 +40,7 @@ const TentangKami = () => {
           >
             <img
               src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&h=1080&fit=crop"
-              alt="Pemandangan Desa Pakel"
+              alt="Pemandangan Padukuhan Pakel"
               className="w-full h-full object-cover"
             />
           </motion.div>
@@ -60,7 +60,7 @@ const TentangKami = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Mengenal lebih dekat kehidupan, sejarah, dan potensi desa kami
+            Mengenal lebih dekat kehidupan, sejarah, dan potensi padukuhan kami
           </motion.p>
         </div>
       </section>
@@ -108,20 +108,20 @@ const TentangKami = () => {
                 </p>
                 <p className="leading-relaxed">
                   Seiring dengan perkembangan teknologi, kami berinovasi dalam
-                  mengembangkan pelayanan publik bagi masyarakat desa. Website
-                  ini adalah salah satu bentuk inovasi dan pelayanan kami kepada
-                  Anda.
+                  mengembangkan pelayanan publik bagi masyarakat padukuhan.
+                  Website ini adalah salah satu bentuk inovasi dan pelayanan
+                  kami kepada Anda.
                 </p>
                 <p className="leading-relaxed">
-                  Website desa ini didirikan atas dukungan Kementerian
+                  Website padukuhan ini didirikan atas dukungan Kementerian
                   Komunikasi dan Informatika Republik Indonesia. Keberadaannya
                   diharapkan dapat mempermudah masyarakat mendapatkan informasi
                   yang bermanfaat.
                 </p>
                 <p className="leading-relaxed">
                   Dalam memberikan layanan, kami selalu berusaha memberikan yang
-                  terbaik. Semoga website desa ini dapat memberi banyak manfaat
-                  bagi seluruh masyarakat.
+                  terbaik. Semoga website padukuhan ini dapat memberi banyak
+                  manfaat bagi seluruh masyarakat.
                 </p>
               </motion.div>
             </div>
@@ -129,7 +129,7 @@ const TentangKami = () => {
         </div>
       </section>
 
-      {/* Profil Umum dan Sejarah Desa */}
+      {/* Profil Umum dan Sejarah Padukuhan */}
       <section
         className="py-16 sm:py-20"
         style={{ backgroundColor: `${colorPalette.accent}15` }}
@@ -157,7 +157,7 @@ const TentangKami = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Profil & Sejarah Desa
+              Profil & Sejarah Padukuhan
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
               Mengenal lebih dalam tentang asal usul dan perjalanan Padukuhan
@@ -183,7 +183,7 @@ const TentangKami = () => {
                 <p>
                   Padukuhan Pakel merupakan salah satu dusun yang berada di Desa
                   Planjan, Kecamatan Saptosari, Kabupaten Gunung Kidul, Daerah
-                  Istimewa Yogyakarta. Desa ini terletak sekitar 45 km dari
+                  Istimewa Yogyakarta. Padukuhan ini terletak sekitar 45 km dari
                   pusat Kota Yogyakarta.
                 </p>
                 <p>
@@ -193,9 +193,9 @@ const TentangKami = () => {
                   komoditas utama jagung manis dan singkong premium.
                 </p>
                 <p>
-                  Selain pertanian, desa ini juga mengembangkan sektor UMKM yang
-                  menjadi tulang punggung ekonomi lokal. Produk-produk seperti
-                  keripik singkong dan olahan jagung menjadi kebanggaan
+                  Selain pertanian, padukuhan ini juga mengembangkan sektor UMKM
+                  yang menjadi tulang punggung ekonomi lokal. Produk-produk
+                  seperti keripik singkong dan olahan jagung menjadi kebanggaan
                   masyarakat setempat.
                 </p>
               </div>
@@ -210,7 +210,7 @@ const TentangKami = () => {
             >
               <img
                 src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=600&h=400&fit=crop"
-                alt="Pemandangan Desa Pakel"
+                alt="Pemandangan Padukuhan Pakel"
                 className="w-full h-64 sm:h-80 object-cover rounded-2xl shadow-lg"
               />
               <motion.div
@@ -229,7 +229,7 @@ const TentangKami = () => {
             </motion.div>
           </div>
 
-          {/* Sejarah Desa */}
+          {/* Sejarah Padukuhan */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -240,7 +240,7 @@ const TentangKami = () => {
               className="text-xl sm:text-2xl font-merriweather font-bold text-center mb-6"
               style={{ color: colorPalette.text }}
             >
-              Sejarah Desa
+              Sejarah Padukuhan
             </h3>
             <div className="relative">
               {/* Timeline Line */}
@@ -255,7 +255,7 @@ const TentangKami = () => {
                   year: "Abad 18",
                   title: "Awal Mula Desa Planjan",
                   content:
-                    "Desa Planjan, tempat Padukuhan Pakel berada, didirikan oleh Mbah Rono atau Kyai Rono, seorang tokoh yang membuka lahan di wilayah ini. Nama Planjan berasal dari kata 'pelan-pelan ojoan', yang berarti perjalanan perlahan menuju tujuan, mencerminkan perjuangan awal penduduk dalam membangun desa.",
+                    "Desa Planjan, tempat Padukuhan Pakel berada, didirikan oleh Mbah Rono atau Kyai Rono, seorang tokoh yang membuka lahan di wilayah ini. Nama Planjan berasal dari kata 'pelan-pelan ojoan', yang berarti perjalanan perlahan menuju tujuan, mencerminkan perjuangan awal penduduk dalam membangun padukuhan.",
                 },
                 {
                   year: "1920-an",
@@ -273,19 +273,19 @@ const TentangKami = () => {
                   year: "1980-an",
                   title: "Pembangunan Infrastruktur",
                   content:
-                    "Pembangunan jalan desa dan fasilitas umum mulai dilakukan di Planjan, termasuk di Padukuhan Pakel. Akses yang lebih baik memungkinkan hasil pertanian seperti jagung dan singkong dipasarkan ke wilayah lain.",
+                    "Pembangunan jalan padukuhan dan fasilitas umum mulai dilakukan di Planjan, termasuk di Padukuhan Pakel. Akses yang lebih baik memungkinkan hasil pertanian seperti jagung dan singkong dipasarkan ke wilayah lain.",
                 },
                 {
                   year: "2000-an",
                   title: "Kebangkitan UMKM",
                   content:
-                    "Padukuhan Pakel mulai mengembangkan UMKM berbasis hasil pertanian, seperti keripik singkong dan olahan jagung, yang menjadi ciri khas desa. Inisiatif ini memperkuat ekonomi lokal dan memperkenalkan produk desa ke pasar yang lebih luas.",
+                    "Padukuhan Pakel mulai mengembangkan UMKM berbasis hasil pertanian, seperti keripik singkong dan olahan jagung, yang menjadi ciri khas padukuhan. Inisiatif ini memperkuat ekonomi lokal dan memperkenalkan produk padukuhan ke pasar yang lebih luas.",
                 },
                 {
                   year: "2020",
                   title: "Era Digitalisasi",
                   content:
-                    "Padukuhan Pakel mengadopsi teknologi digital untuk administrasi desa dan promosi UMKM. Peluncuran website desa menjadi langkah penting dalam memperkenalkan potensi Padukuhan Pakel kepada dunia.",
+                    "Padukuhan Pakel mengadopsi teknologi digital untuk administrasi padukuhan dan promosi UMKM. Peluncuran website padukuhan menjadi langkah penting dalam memperkenalkan potensi Padukuhan Pakel kepada dunia.",
                 },
               ].map((item, index) => (
                 <motion.div
@@ -337,7 +337,7 @@ const TentangKami = () => {
         </div>
       </section>
 
-      {/* Geografis Desa Section */}
+      {/* Geografis Padukuhan Section */}
       <section
         className="py-16 sm:py-20"
         style={{ backgroundColor: `${colorPalette.accent}15` }}
@@ -365,7 +365,7 @@ const TentangKami = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Geografis Desa
+              Geografis Padukuhan
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
               Mengenal kondisi geografis dan batas wilayah Padukuhan Pakel
@@ -412,8 +412,8 @@ const TentangKami = () => {
                     <p className="text-gray-600 font-inter text-sm sm:text-base">
                       Padukuhan Pakel terletak di dataran tinggi Gunung Kidul
                       dengan ketinggian sekitar 200-300 meter di atas permukaan
-                      laut. Desa ini memiliki topografi berbukit dengan tanah
-                      kapur yang khas dari kawasan karst Gunung Kidul.
+                      laut. Padukuhan ini memiliki topografi berbukit dengan
+                      tanah kapur yang khas dari kawasan karst Gunung Kidul.
                     </p>
                   </div>
                 </div>
@@ -485,7 +485,7 @@ const TentangKami = () => {
             </div>
           </motion.div>
 
-          {/* Peta Desa */}
+          {/* Peta Padukuhan */}
           <motion.div
             className="bg-white rounded-3xl shadow-lg overflow-hidden mb-10"
             initial={{ opacity: 0, y: 30 }}
@@ -498,7 +498,7 @@ const TentangKami = () => {
                 className="text-xl font-merriweather font-bold mb-4"
                 style={{ color: colorPalette.text }}
               >
-                Peta Desa
+                Peta Padukuhan
               </h3>
               <div className="relative h-[300px] sm:h-[400px] rounded-xl overflow-hidden">
                 <iframe
@@ -532,17 +532,17 @@ const TentangKami = () => {
                 {[
                   {
                     direction: "Utara",
-                    border: "Desa Ngloro",
+                    border: "Padukuhan Ngloro",
                     icon: Compass,
                   },
                   {
                     direction: "Timur",
-                    border: "Desa Kanigoro",
+                    border: "Padukuhan Kanigoro",
                     icon: Compass,
                   },
                   {
                     direction: "Selatan",
-                    border: "Desa Monggol",
+                    border: "Padukuhan Monggol",
                     icon: Compass,
                   },
                   {
@@ -589,7 +589,7 @@ const TentangKami = () => {
         </div>
       </section>
 
-      {/* Demografi Desa Section */}
+      {/* Demografi Padukuhan Section */}
       <section className="py-16 sm:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
           <motion.div
@@ -614,7 +614,7 @@ const TentangKami = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Demografi Desa
+              Demografi Padukuhan
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
               Data kependudukan dan statistik sosial Padukuhan Pakel
@@ -865,7 +865,7 @@ const TentangKami = () => {
               Kunjungi Padukuhan Pakel
             </h2>
             <p className="text-gray-600 font-inter mb-8 max-w-2xl mx-auto">
-              Kami mengundang Anda untuk mengunjungi desa kami, menikmati
+              Kami mengundang Anda untuk mengunjungi padukuhan kami, menikmati
               keindahan alam, dan merasakan kehangatan masyarakat Padukuhan
               Pakel.
             </p>

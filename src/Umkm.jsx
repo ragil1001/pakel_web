@@ -1,65 +1,51 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import { colorPalette } from "./colors";
+import { getUmkms } from "./firebaseUtils";
 
 const UMKM = () => {
-  const products = [
-    {
-      id: 1,
-      name: "Keripik Singkong Renyah",
-      owner: "Ibu Siti",
-      description:
-        "Keripik singkong dengan rasa original dan pedas, dibuat dari singkong pilihan.",
-      image:
-        "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=600&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      name: "Jagung Manis Segar",
-      owner: "Pak Budi",
-      description:
-        "Jagung manis langsung dari kebun, manis dan berkualitas tinggi.",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      name: "Tepung Jagung Organik",
-      owner: "Ibu Rina",
-      description: "Tepung jagung alami untuk berbagai olahan makanan sehat.",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      name: "Gula Aren Tradisional",
-      owner: "Pak Slamet",
-      description:
-        "Gula aren murni, dibuat secara tradisional dengan cita rasa autentik.",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      name: "Kripik Tempe",
-      owner: "Ibu Wulan",
-      description:
-        "Kripik tempe renyah dengan bumbu khas, cocok untuk camilan.",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&h=400&fit=crop",
-    },
-    {
-      id: 6,
-      name: "Madu Hutan Asli",
-      owner: "Pak Joko",
-      description:
-        "Madu murni dari hutan Gunung Kidul, kaya akan manfaat kesehatan.",
-      image:
-        "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&h=400&fit=crop",
-    },
-  ];
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUmkms = async () => {
+      try {
+        setLoading(true);
+        const umkms = await getUmkms();
+        setProducts(umkms);
+      } catch (error) {
+        console.error("Error fetching UMKM:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUmkms();
+  }, []);
+
+  // Fungsi untuk format harga berdasarkan varian
+  const formatPrice = (variants) => {
+    if (!variants || variants.length === 0) {
+      return "Harga tidak tersedia";
+    }
+    if (variants.length === 1) {
+      return `Rp ${variants[0].price}/${variants[0].unit || "pcs"}`;
+    }
+    const prices = variants
+      .map((v) => parseFloat(v.price))
+      .filter((p) => !isNaN(p));
+    if (prices.length === 0) {
+      return "Harga tidak tersedia";
+    }
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const unit = variants[0].unit || "pcs"; // Gunakan unit dari varian pertama
+    return minPrice === maxPrice
+      ? `Rp ${minPrice}/${unit}`
+      : `Rp ${minPrice} - ${maxPrice}/${unit}`;
+  };
 
   return (
     <div style={{ backgroundColor: colorPalette.background }}>
@@ -140,66 +126,80 @@ const UMKM = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {products.map((product, index) => (
-              <motion.div
-                key={product.id}
-                className="bg-white rounded-3xl shadow-xl overflow-hidden"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                whileHover={{
-                  y: -10,
-                  boxShadow: `0 10px 20px ${colorPalette.accent}40`,
-                }}
-              >
-                <div className="relative">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-48 sm:h-56 md:h-64 object-cover"
-                  />
-                  <motion.div
-                    className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-inter font-semibold text-white"
-                    style={{ backgroundColor: colorPalette.primary }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    UMKM Lokal
-                  </motion.div>
-                </div>
-                <div className="p-4 sm:p-6">
-                  <h3
-                    className="text-lg sm:text-xl font-merriweather font-bold mb-2"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {product.name}
-                  </h3>
-                  <p
-                    className="text-sm font-inter text-gray-600 mb-2"
-                    style={{ color: colorPalette.text }}
-                  >
-                    Oleh: {product.owner}
-                  </p>
-                  <p className="text-sm font-inter text-gray-600 mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
-                  <Link to={`/umkm/${product.id}`}>
-                    <motion.button
-                      className="px-4 py-2 rounded-full font-inter font-semibold text-sm text-white"
-                      style={{ backgroundColor: colorPalette.secondary }}
-                      whileHover={{
-                        scale: 1.05,
-                        backgroundColor: colorPalette.primary,
-                      }}
-                      transition={{ duration: 0.3 }}
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg font-inter text-gray-600">
+                Belum ada data UMKM tersedia.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {products.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  className="bg-white rounded-3xl shadow-xl overflow-hidden"
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  whileHover={{
+                    y: -10,
+                    boxShadow: `0 10px 20px ${colorPalette.accent}40`,
+                  }}
+                >
+                  <div className="relative">
+                    <img
+                      src={
+                        product.image ||
+                        "https://via.placeholder.com/400x300?text=No+Image"
+                      }
+                      alt={product.name}
+                      className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                    />
+                  </div>
+                  <div className="p-4 sm:p-6">
+                    <h3
+                      className="text-lg sm:text-xl font-merriweather font-bold mb-2"
+                      style={{ color: colorPalette.text }}
                     >
-                      Lihat Detail
-                    </motion.button>
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                      {product.name}
+                    </h3>
+                    <p
+                      className="text-sm font-inter text-gray-600 mb-2"
+                      style={{ color: colorPalette.text }}
+                    >
+                      Oleh: {product.owner}
+                    </p>
+                    <p
+                      className="text-sm font-inter font-semibold mb-4"
+                      style={{ color: colorPalette.primary }}
+                    >
+                      {formatPrice(product.variants)}
+                    </p>
+                    <p className="text-sm font-inter text-gray-600 mb-4 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <Link to={`/umkm/${product.id}`}>
+                      <motion.button
+                        className="px-4 py-2 rounded-full font-inter font-semibold text-sm text-white"
+                        style={{ backgroundColor: colorPalette.secondary }}
+                        whileHover={{
+                          scale: 1.05,
+                          backgroundColor: colorPalette.primary,
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        Lihat Detail
+                      </motion.button>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

@@ -1,73 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Image, X, Calendar, Search } from "lucide-react";
 import { colorPalette } from "./colors";
+import { getGallery } from "./firebaseUtils";
 
 const Galeri = () => {
+  const [galleryItems, setGalleryItems] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const galleryItems = [
-    {
-      id: 1,
-      type: "Kegiatan",
-      name: "Panen Raya Jagung 2025",
-      date: "15 Juni 2025",
-      description:
-        "Kegiatan panen raya jagung bersama masyarakat desa, merayakan hasil panen yang melimpah.",
-      image:
-        "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      type: "Rapat",
-      name: "Rapat Koordinasi UMKM",
-      date: "10 Mei 2025",
-      description:
-        "Rapat untuk membahas strategi pengembangan UMKM lokal di Padukuhan Pakel.",
-      image:
-        "https://images.unsplash.com/photo-1552581234-26160f608093?w=600&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      type: "Festival",
-      name: "Festival Panen Tahunan",
-      date: "20 April 2025",
-      description:
-        "Festival tahunan dengan berbagai lomba dan pertunjukan budaya.",
-      image:
-        "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      type: "Kegiatan",
-      name: "Gotong Royong Desa",
-      date: "5 Maret 2025",
-      description:
-        "Kegiatan gotong royong untuk pembangunan infrastruktur desa.",
-      image:
-        "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      type: "Pelatihan",
-      name: "Pelatihan Pertanian Modern",
-      date: "25 Februari 2025",
-      description:
-        "Pelatihan teknik pertanian modern untuk meningkatkan hasil panen.",
-      image:
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop",
-    },
-    {
-      id: 6,
-      type: "Kegiatan",
-      name: "Pembersihan Lingkungan",
-      date: "12 Januari 2025",
-      description:
-        "Kegiatan pembersihan lingkungan untuk menjaga keindahan desa.",
-      image:
-        "https://images.unsplash.com/photo-1599059813005-11265ba4b4ce?w=600&h=400&fit=crop",
-    },
-  ];
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        setLoading(true);
+        const gallery = await getGallery();
+        setGalleryItems(gallery);
+      } catch (error) {
+        console.error("Error fetching Gallery:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGallery();
+  }, []);
 
   const openModal = (item) => setSelectedImage(item);
   const closeModal = () => setSelectedImage(null);
@@ -150,7 +106,7 @@ const Galeri = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Koleksi Kegiatan Desa
+              Koleksi Kegiatan Padukuhan
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
               Jelajahi berbagai dokumentasi kegiatan yang mencerminkan semangat
@@ -158,68 +114,95 @@ const Galeri = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {galleryItems.map((item, index) => (
-              <motion.div
-                key={item.id}
-                className="bg-white rounded-3xl shadow-xl overflow-hidden"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.2 }}
-                whileHover={{
-                  y: -10,
-                  boxShadow: `0 10px 20px ${colorPalette.accent}40`,
-                }}
-              >
-                <div className="relative group">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-48 sm:h-56 md:h-64 object-cover cursor-pointer"
-                    onClick={() => openModal(item)}
-                    aria-label={`View details of ${item.name}`}
-                  />
-                  <motion.div
-                    className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-inter font-semibold text-white"
-                    style={{
-                      backgroundColor:
-                        item.type === "Kegiatan"
-                          ? colorPalette.primary
-                          : item.type === "Rapat"
-                          ? colorPalette.secondary
-                          : item.type === "Festival"
-                          ? colorPalette.accent
-                          : "#4B5563",
-                    }}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    {item.type}
-                  </motion.div>
-                  <motion.div
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
-                    onClick={() => openModal(item)}
-                    initial={{ scale: 0.8 }}
-                    whileHover={{ scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Search className="w-10 h-10 text-white" />
-                  </motion.div>
-                </div>
-                <div className="p-4 sm:p-6">
-                  <h3
-                    className="text-lg sm:text-xl font-merriweather font-bold mb-2"
-                    style={{ color: colorPalette.text }}
-                  >
-                    {item.name}
-                  </h3>
-                  <div className="flex items-center text-sm font-inter text-gray-600 mb-4">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {item.date}
+          {loading ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            </div>
+          ) : galleryItems.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg font-inter text-gray-600">
+                Belum ada data galeri tersedia.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {galleryItems.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  className="bg-white rounded-3xl shadow-xl overflow-hidden"
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.2 }}
+                  whileHover={{
+                    y: -10,
+                    boxShadow: `0 10px 20px ${colorPalette.accent}40`,
+                  }}
+                >
+                  <div className="relative group">
+                    <img
+                      src={
+                        item.image ||
+                        "https://via.placeholder.com/400x300?text=No+Image"
+                      }
+                      alt={item.name || item.title}
+                      className="w-full h-48 sm:h-56 md:h-64 object-cover cursor-pointer"
+                      onClick={() => openModal(item)}
+                      aria-label={`View details of ${item.name || item.title}`}
+                    />
+                    <motion.div
+                      className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-inter font-semibold text-white"
+                      style={{
+                        backgroundColor:
+                          item.type === "Kegiatan"
+                            ? colorPalette.primary
+                            : item.type === "Rapat"
+                            ? colorPalette.secondary
+                            : item.type === "Festival"
+                            ? colorPalette.accent
+                            : item.type === "Pelatihan"
+                            ? "#4B5563"
+                            : "#4B5563",
+                      }}
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      {item.type}
+                    </motion.div>
+                    <motion.div
+                      className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 cursor-pointer"
+                      onClick={() => openModal(item)}
+                      initial={{ scale: 0.8 }}
+                      whileHover={{ scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Search className="w-10 h-10 text-white" />
+                    </motion.div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  <div className="p-4 sm:p-6">
+                    <h3
+                      className="text-lg sm:text-xl font-merriweather font-bold mb-2"
+                      style={{ color: colorPalette.text }}
+                    >
+                      {item.name || item.title}
+                    </h3>
+                    <div className="flex items-center text-sm font-inter text-gray-600 mb-4">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {item.createdAt
+                        ? new Date(
+                            item.createdAt.toDate
+                              ? item.createdAt.toDate()
+                              : item.createdAt
+                          ).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "Tanggal tidak tersedia"}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -249,8 +232,11 @@ const Galeri = () => {
                 <X className="w-5 h-5 text-gray-700" />
               </button>
               <img
-                src={selectedImage.image}
-                alt={selectedImage.name}
+                src={
+                  selectedImage.image ||
+                  "https://via.placeholder.com/400x300?text=No+Image"
+                }
+                alt={selectedImage.name || selectedImage.title}
                 className="w-full h-[400px] object-cover"
               />
               <div className="p-6">
@@ -264,6 +250,8 @@ const Galeri = () => {
                         ? colorPalette.secondary
                         : selectedImage.type === "Festival"
                         ? colorPalette.accent
+                        : selectedImage.type === "Pelatihan"
+                        ? "#4B5563"
                         : "#4B5563",
                   }}
                 >
@@ -273,14 +261,24 @@ const Galeri = () => {
                   className="text-xl font-merriweather font-bold mb-2"
                   style={{ color: colorPalette.text }}
                 >
-                  {selectedImage.name}
+                  {selectedImage.name || selectedImage.title}
                 </h3>
                 <div className="flex items-center text-sm font-inter text-gray-600 mb-4">
                   <Calendar className="w-4 h-4 mr-1" />
-                  {selectedImage.date}
+                  {selectedImage.createdAt
+                    ? new Date(
+                        selectedImage.createdAt.toDate
+                          ? selectedImage.createdAt.toDate()
+                          : selectedImage.createdAt
+                      ).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "Tanggal tidak tersedia"}
                 </div>
                 <p className="text-sm font-inter text-gray-600">
-                  {selectedImage.description}
+                  {selectedImage.description || "Deskripsi tidak tersedia"}
                 </p>
               </div>
             </motion.div>

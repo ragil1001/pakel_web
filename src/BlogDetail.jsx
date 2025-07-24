@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -12,85 +12,46 @@ import {
   Instagram,
 } from "lucide-react";
 import { colorPalette } from "./colors";
+import { getNews } from "./firebaseUtils";
 
 const BlogDetail = () => {
   const { id } = useParams();
+  const [article, setArticle] = useState(null);
+  const [relatedArticles, setRelatedArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Static news data (same as Blog.jsx)
-  const newsItems = [
-    {
-      id: 1,
-      type: "Pengumuman",
-      title: "Panen Raya Jagung 2025",
-      content:
-        "Kegiatan panen raya jagung akan dilaksanakan pada tanggal 15 Juni 2025 di seluruh lahan pertanian Padukuhan Pakel. Acara ini akan dihadiri oleh seluruh masyarakat desa dan pejabat setempat. Panen raya ini merupakan puncak dari musim tanam yang sukses, dengan hasil jagung manis yang melimpah. Kegiatan ini juga akan dimeriahkan dengan berbagai acara budaya, seperti tarian tradisional dan pasar UMKM lokal. Kami mengundang seluruh masyarakat untuk turut serta dalam kegiatan ini untuk mempererat kebersamaan dan merayakan hasil bumi desa kita.",
-      date: "10 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 2,
-      type: "Berita",
-      title: "Pembukaan UMKM Baru",
-      content:
-        "Tiga UMKM baru telah dibuka di desa untuk mendukung perekonomian lokal, termasuk toko keripik singkong dan madu hutan asli. Peresmian dilakukan oleh kepala desa pada tanggal 8 Juni 2025, dihadiri oleh warga dan pengusaha lokal. UMKM ini diharapkan dapat meningkatkan pendapatan masyarakat dan mempromosikan produk lokal ke pasar yang lebih luas. Produk-produk unggulan seperti keripik singkong dengan berbagai rasa dan madu hutan asli telah mendapat sambutan positif dari konsumen. Pemerintah desa berkomitmen untuk terus mendukung pengembangan UMKM melalui pelatihan dan promosi.",
-      date: "8 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 3,
-      type: "Kegiatan",
-      title: "Pelatihan Pertanian Modern",
-      content:
-        "Pelatihan teknik pertanian modern untuk meningkatkan hasil panen diadakan dengan melibatkan para petani muda desa. Kegiatan ini berlangsung pada 5 Juni 2025 di balai desa, bekerja sama dengan Dinas Pertanian Kabupaten Gunung Kidul. Para peserta diajarkan tentang penggunaan teknologi irigasi tetes, pemupukan organik, dan pengendalian hama terpadu. Pelatihan ini bertujuan untuk meningkatkan produktivitas pertanian dan mendukung keberlanjutan lingkungan. Antusiasme peserta sangat tinggi, dan mereka berharap dapat menerapkan ilmu yang diperoleh di lahan mereka.",
-      date: "5 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 4,
-      type: "Pengumuman",
-      title: "Rapat Desa Bulanan",
-      content:
-        "Rapat desa bulanan akan diadakan pada 20 Mei 2025 untuk membahas pembangunan infrastruktur dan program UMKM. Rapat ini akan berlangsung di balai desa mulai pukul 19.00 WIB dan terbuka untuk seluruh warga Padukuhan Pakel. Agenda utama meliputi rencana pembangunan jalan desa, peningkatan fasilitas umum, dan strategi promosi produk UMKM. Kami mengharapkan partisipasi aktif dari masyarakat untuk memberikan masukan dan ide-ide inovatif demi kemajuan desa. Informasi lebih lanjut dapat diperoleh di kantor desa.",
-      date: "15 Mei 2025",
-      image:
-        "https://images.unsplash.com/photo-1552581234-26160f608093?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 5,
-      type: "Berita",
-      title: "Festival Panen Berhasil Digelar",
-      content:
-        "Festival panen tahunan sukses digelar dengan berbagai lomba dan pertunjukan budaya yang meriah. Acara ini berlangsung pada 20 April 2025 di lapangan desa, dihadiri oleh ribuan warga dan pengunjung dari luar desa. Kegiatan meliputi lomba memasak berbahan jagung, tari tradisional, dan pameran produk UMKM. Festival ini tidak hanya menjadi ajang perayaan hasil panen, tetapi juga memperkuat identitas budaya dan kebersamaan masyarakat Padukuhan Pakel. Kami berterima kasih kepada semua pihak yang telah mendukung kesuksesan acara ini.",
-      date: "25 April 2025",
-      image:
-        "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 6,
-      type: "Kegiatan",
-      title: "Pembersihan Lingkungan Desa",
-      content:
-        "Kegiatan pembersihan lingkungan desa diadakan untuk menjaga keindahan dan kebersihan Padukuhan Pakel. Kegiatan ini berlangsung pada 10 Januari 2025, melibatkan warga dari berbagai dusun. Fokus utama adalah membersihkan saluran air, jalan desa, dan area sekitar balai desa. Selain itu, warga juga menanam pohon di beberapa titik untuk mendukung penghijauan. Kegiatan ini mencerminkan semangat gotong royong dan kepedulian terhadap lingkungan. Kami mengapresiasi partisipasi semua warga dalam menjaga kebersihan desa.",
-      date: "10 Januari 2025",
-      image:
-        "https://images.unsplash.com/photo-1599059813005-11265ba4b4ce?w=1200&h=600&fit=crop",
-    },
-    {
-      id: 7,
-      type: "Lainnya",
-      title: "Pameran Produk Lokal",
-      content:
-        "Pameran produk lokal diadakan untuk mempromosikan hasil UMKM Padukuhan Pakel ke pasar yang lebih luas. Acara ini berlangsung pada 12 Maret 2025 di pusat desa, menampilkan berbagai produk seperti keripik singkong, madu hutan, dan kerajinan tangan. Pengunjung dapat menikmati demo pembuatan produk dan mencicipi makanan lokal. Pameran ini juga menjadi ajang untuk menjalin kerja sama dengan distributor dari luar daerah. Keberhasilan acara ini diharapkan dapat meningkatkan ekonomi lokal.",
-      date: "12 Maret 2025",
-      image:
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=600&fit=crop",
-    },
-  ];
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        setLoading(true);
+        const news = await getNews();
+        const selectedArticle = news.find((item) => item.id === id);
+        setArticle(selectedArticle);
+        setRelatedArticles(news.filter((item) => item.id !== id).slice(0, 3));
+      } catch (error) {
+        console.error("Error fetching News:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const article = newsItems.find((item) => item.id === parseInt(id));
+    fetchNews();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: colorPalette.background }}
+      >
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </motion.div>
+    );
+  }
 
   if (!article) {
     return (
@@ -108,11 +69,6 @@ const BlogDetail = () => {
       </motion.div>
     );
   }
-
-  // Related articles (exclude current article)
-  const relatedArticles = newsItems
-    .filter((item) => item.id !== article.id)
-    .slice(0, 3);
 
   // Share functionality
   const shareArticle = async () => {
@@ -178,7 +134,10 @@ const BlogDetail = () => {
             className="w-full h-full"
           >
             <img
-              src={article.image}
+              src={
+                article.image ||
+                "https://via.placeholder.com/1200x600?text=No+Image"
+              }
               alt={article.title}
               className="w-full h-full object-cover"
             />
@@ -218,7 +177,17 @@ const BlogDetail = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <Calendar className="w-4 h-4 mr-1" />
-            {article.date}
+            {article.createdAt
+              ? new Date(
+                  article.createdAt.toDate
+                    ? article.createdAt.toDate()
+                    : article.createdAt
+                ).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "Tanggal tidak tersedia"}
           </motion.div>
         </div>
       </section>
@@ -237,12 +206,6 @@ const BlogDetail = () => {
               <div className="prose prose-sm sm:prose-base font-inter text-gray-700">
                 <p className="leading-relaxed">{article.content}</p>
                 {/* Placeholder for additional content */}
-                <p className="leading-relaxed mt-4">
-                  Kegiatan ini merupakan bagian dari upaya berkelanjutan
-                  masyarakat Padukuhan Pakel untuk memajukan desa melalui
-                  kolaborasi dan inovasi. Kami mengundang semua pihak untuk
-                  terus mendukung inisiatif ini demi kesejahteraan bersama.
-                </p>
               </div>
 
               {/* Share Section */}
@@ -371,7 +334,7 @@ const BlogDetail = () => {
                 className="text-xl font-merriweather font-bold mb-4"
                 style={{ color: colorPalette.text }}
               >
-                Artikel Terkait
+                Artikel Lainnya
               </h3>
               <div className="space-y-4">
                 {relatedArticles.map((related) => (
@@ -385,7 +348,10 @@ const BlogDetail = () => {
                       transition={{ duration: 0.3 }}
                     >
                       <img
-                        src={related.image}
+                        src={
+                          related.image ||
+                          "https://via.placeholder.com/400x300?text=No+Image"
+                        }
                         alt={related.title}
                         className="w-20 h-20 object-cover rounded-xl"
                       />
@@ -412,7 +378,17 @@ const BlogDetail = () => {
                           {related.title}
                         </h4>
                         <p className="text-xs font-inter text-gray-600">
-                          {related.date}
+                          {related.createdAt
+                            ? new Date(
+                                related.createdAt.toDate
+                                  ? related.createdAt.toDate()
+                                  : related.createdAt
+                              ).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : "Tanggal tidak tersedia"}
                         </p>
                       </div>
                     </motion.div>

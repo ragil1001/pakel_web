@@ -1,86 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Newspaper, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { colorPalette } from "./colors";
+import { getNews } from "./firebaseUtils";
 
 const Blog = () => {
+  const [newsItems, setNewsItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
-
-  const newsItems = [
-    {
-      id: 1,
-      type: "Pengumuman",
-      title: "Panen Raya Jagung 2025",
-      content:
-        "Kegiatan panen raya jagung akan dilaksanakan pada tanggal 15 Juni 2025 di seluruh lahan pertanian Padukuhan Pakel. Acara ini akan dihadiri oleh seluruh masyarakat desa dan pejabat setempat.",
-      date: "10 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      type: "Berita",
-      title: "Pembukaan UMKM Baru",
-      content:
-        "Tiga UMKM baru telah dibuka di desa untuk mendukung perekonomian lokal, termasuk toko keripik singkong dan madu hutan asli.",
-      date: "8 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      type: "Kegiatan",
-      title: "Pelatihan Pertanian Modern",
-      content:
-        "Pelatihan teknik pertanian modern untuk meningkatkan hasil panen diadakan dengan melibatkan para petani muda desa.",
-      date: "5 Juni 2025",
-      image:
-        "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      type: "Pengumuman",
-      title: "Rapat Desa Bulanan",
-      content:
-        "Rapat desa bulanan akan diadakan pada 20 Mei 2025 untuk membahas pembangunan infrastruktur dan program UMKM.",
-      date: "15 Mei 2025",
-      image:
-        "https://images.unsplash.com/photo-1552581234-26160f608093?w=600&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      type: "Berita",
-      title: "Festival Panen Berhasil Digelar",
-      content:
-        "Festival panen tahunan sukses digelar dengan berbagai lomba dan pertunjukan budaya yang meriah.",
-      date: "25 April 2025",
-      image:
-        "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&h=400&fit=crop",
-    },
-    {
-      id: 6,
-      type: "Kegiatan",
-      title: "Pembersihan Lingkungan Desa",
-      content:
-        "Kegiatan pembersihan lingkungan desa diadakan untuk menjaga keindahan dan kebersihan Padukuhan Pakel.",
-      date: "10 Januari 2025",
-      image:
-        "https://images.unsplash.com/photo-1599059813005-11265ba4b4ce?w=600&h=400&fit=crop",
-    },
-    {
-      id: 7,
-      type: "Lainnya",
-      title: "Pameran Produk Lokal",
-      content:
-        "Pameran produk lokal diadakan untuk mempromosikan hasil UMKM Padukuhan Pakel ke pasar yang lebih luas.",
-      date: "12 Maret 2025",
-      image:
-        "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop",
-    },
-  ];
+  const [loading, setLoading] = useState(true);
 
   const categories = ["Semua", "Pengumuman", "Kegiatan", "Berita", "Lainnya"];
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        setLoading(true);
+        const news = await getNews();
+        setNewsItems(news);
+      } catch (error) {
+        console.error("Error fetching News:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, []);
 
   const filteredNews =
     selectedCategory === "Semua"
@@ -213,9 +159,13 @@ const Blog = () => {
 
           {/* News Catalog */}
           <AnimatePresence>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {filteredNews.length > 0 ? (
-                filteredNews.map((news, index) => (
+            {loading ? (
+              <div className="flex justify-center items-center h-40 col-span-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+              </div>
+            ) : filteredNews.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {filteredNews.map((news, index) => (
                   <motion.div
                     key={news.id}
                     className="bg-white rounded-3xl shadow-xl overflow-hidden"
@@ -230,7 +180,10 @@ const Blog = () => {
                   >
                     <div className="relative">
                       <img
-                        src={news.image}
+                        src={
+                          news.image ||
+                          "https://via.placeholder.com/400x300?text=No+Image"
+                        }
                         alt={news.title}
                         className="w-full h-48 sm:h-56 md:h-64 object-cover"
                       />
@@ -260,7 +213,17 @@ const Blog = () => {
                       </h3>
                       <div className="flex items-center text-sm font-inter text-gray-600 mb-2">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {news.date}
+                        {news.createdAt
+                          ? new Date(
+                              news.createdAt.toDate
+                                ? news.createdAt.toDate()
+                                : news.createdAt
+                            ).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : "Tanggal tidak tersedia"}
                       </div>
                       <p className="text-sm font-inter text-gray-600 mb-4 line-clamp-2">
                         {news.content}
@@ -277,13 +240,13 @@ const Blog = () => {
                       </Link>
                     </div>
                   </motion.div>
-                ))
-              ) : (
-                <p className="text-center text-gray-600 font-inter col-span-full">
-                  Tidak ada berita dalam kategori ini.
-                </p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-600 font-inter col-span-full">
+                Tidak ada berita dalam kategori ini.
+              </p>
+            )}
           </AnimatePresence>
         </div>
       </section>
