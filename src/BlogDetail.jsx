@@ -3,7 +3,6 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Calendar,
-  Newspaper,
   ArrowLeft,
   Share2,
   MessageCircle,
@@ -13,6 +12,12 @@ import {
 } from "lucide-react";
 import { colorPalette } from "./colors";
 import { getNews } from "./firebaseUtils";
+
+const stripHtml = (html) => {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+};
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -37,6 +42,43 @@ const BlogDetail = () => {
 
     fetchNews();
   }, [id]);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Tanggal tidak tersedia";
+    let dateObj;
+    if (dateStr.includes("/")) {
+      const [day, month, year] = dateStr.split("/");
+      dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      const [day, month, year] = dateStr.split(" ");
+      const monthMap = {
+        Januari: 0,
+        Februari: 1,
+        Maret: 2,
+        April: 3,
+        Mei: 4,
+        Juni: 5,
+        Juli: 6,
+        Agustus: 7,
+        September: 8,
+        Oktober: 9,
+        November: 10,
+        Desember: 11,
+      };
+      dateObj = new Date(
+        parseInt(year),
+        monthMap[month] || parseInt(month) - 1,
+        parseInt(day)
+      );
+    }
+    if (isNaN(dateObj.getTime())) return dateStr;
+    return dateObj.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   if (loading) {
     return (
@@ -70,11 +112,10 @@ const BlogDetail = () => {
     );
   }
 
-  // Share functionality
   const shareArticle = async () => {
     const shareData = {
       title: article.title,
-      text: article.content.substring(0, 100) + "...",
+      text: stripHtml(article.content).substring(0, 100) + "...",
       url: window.location.href,
     };
 
@@ -85,7 +126,6 @@ const BlogDetail = () => {
         console.error("Error sharing article:", err);
       }
     } else {
-      // Fallback: Open a generic share dialog or alert
       alert(
         "Fitur berbagi tidak didukung di browser ini. Gunakan ikon media sosial di bawah ini."
       );
@@ -94,17 +134,17 @@ const BlogDetail = () => {
 
   const shareLinks = {
     whatsapp: `https://wa.me/?text=${encodeURIComponent(
-      `${article.title}: ${article.content.substring(0, 100)}... ${
+      `${article.title}: ${stripHtml(article.content).substring(0, 100)}... ${
         window.location.href
       }`
     )}`,
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-      `${article.title}: ${article.content.substring(0, 100)}...`
+      `${article.title}: ${stripHtml(article.content).substring(0, 100)}...`
     )}&url=${encodeURIComponent(window.location.href)}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
       window.location.href
     )}`,
-    instagram: `https://www.instagram.com/`, // Instagram doesn't support direct sharing via URL, prompt user
+    instagram: `https://www.instagram.com/`,
   };
 
   return (
@@ -123,7 +163,6 @@ const BlogDetail = () => {
         `}
       </style>
 
-      {/* Hero Section */}
       <section className="relative h-[50vh] sm:h-[60vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/50 z-10" />
@@ -177,38 +216,24 @@ const BlogDetail = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <Calendar className="w-4 h-4 mr-1" />
-            {article.createdAt
-              ? new Date(
-                  article.createdAt.toDate
-                    ? article.createdAt.toDate()
-                    : article.createdAt
-                ).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })
-              : "Tanggal tidak tersedia"}
+            {formatDate(article.date)}
           </motion.div>
         </div>
       </section>
 
-      {/* Article Content Section */}
       <section className="py-16 sm:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
             <motion.div
               className="lg:col-span-2 bg-white rounded-3xl shadow-xl p-6 sm:p-8"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="prose prose-sm sm:prose-base font-inter text-gray-700">
-                <p className="leading-relaxed">{article.content}</p>
-                {/* Placeholder for additional content */}
-              </div>
-
-              {/* Share Section */}
+              <div
+                className="prose prose-sm sm:prose-base font-inter text-gray-700"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
               <motion.div
                 className="mt-8 border-t border-gray-200 pt-6"
                 initial={{ opacity: 0, y: 20 }}
@@ -303,8 +328,6 @@ const BlogDetail = () => {
                   </motion.a>
                 </div>
               </motion.div>
-
-              {/* Back Button */}
               <motion.div className="mt-8">
                 <Link to="/blog">
                   <motion.button
@@ -322,8 +345,6 @@ const BlogDetail = () => {
                 </Link>
               </motion.div>
             </motion.div>
-
-            {/* Sidebar: Related Articles */}
             <motion.div
               className="lg:col-span-1"
               initial={{ opacity: 0, y: 50 }}
@@ -378,17 +399,7 @@ const BlogDetail = () => {
                           {related.title}
                         </h4>
                         <p className="text-xs font-inter text-gray-600">
-                          {related.createdAt
-                            ? new Date(
-                                related.createdAt.toDate
-                                  ? related.createdAt.toDate()
-                                  : related.createdAt
-                              ).toLocaleDateString("id-ID", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : "Tanggal tidak tersedia"}
+                          {formatDate(related.date)}
                         </p>
                       </div>
                     </motion.div>

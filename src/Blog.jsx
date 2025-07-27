@@ -5,6 +5,12 @@ import { Link } from "react-router-dom";
 import { colorPalette } from "./colors";
 import { getNews } from "./firebaseUtils";
 
+const stripHtml = (html) => {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+};
+
 const Blog = () => {
   const [newsItems, setNewsItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
@@ -33,6 +39,43 @@ const Blog = () => {
       ? newsItems
       : newsItems.filter((news) => news.type === selectedCategory);
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "Tanggal tidak tersedia";
+    let dateObj;
+    if (dateStr.includes("/")) {
+      const [day, month, year] = dateStr.split("/");
+      dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      const [day, month, year] = dateStr.split(" ");
+      const monthMap = {
+        Januari: 0,
+        Februari: 1,
+        Maret: 2,
+        April: 3,
+        Mei: 4,
+        Juni: 5,
+        Juli: 6,
+        Agustus: 7,
+        September: 8,
+        Oktober: 9,
+        November: 10,
+        Desember: 11,
+      };
+      dateObj = new Date(
+        parseInt(year),
+        monthMap[month] || parseInt(month) - 1,
+        parseInt(day)
+      );
+    }
+    if (isNaN(dateObj.getTime())) return dateStr;
+    return dateObj.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -49,7 +92,6 @@ const Blog = () => {
         `}
       </style>
 
-      {/* Header Section dengan Parallax Effect */}
       <section className="relative h-[40vh] sm:h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/60 z-10" />
@@ -86,7 +128,6 @@ const Blog = () => {
         </div>
       </section>
 
-      {/* Blog Catalog Section */}
       <section className="py-16 sm:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
           <motion.div
@@ -118,7 +159,6 @@ const Blog = () => {
             </p>
           </motion.div>
 
-          {/* Filter Buttons */}
           <motion.div
             className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -157,7 +197,6 @@ const Blog = () => {
             ))}
           </motion.div>
 
-          {/* News Catalog */}
           <AnimatePresence>
             {loading ? (
               <div className="flex justify-center items-center h-40 col-span-full">
@@ -213,20 +252,10 @@ const Blog = () => {
                       </h3>
                       <div className="flex items-center text-sm font-inter text-gray-600 mb-2">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {news.createdAt
-                          ? new Date(
-                              news.createdAt.toDate
-                                ? news.createdAt.toDate()
-                                : news.createdAt
-                            ).toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })
-                          : "Tanggal tidak tersedia"}
+                        {formatDate(news.date)}
                       </div>
                       <p className="text-sm font-inter text-gray-600 mb-4 line-clamp-2">
-                        {news.content}
+                        {stripHtml(news.content)}
                       </p>
                       <Link to={`/blog/${news.id}`}>
                         <motion.a

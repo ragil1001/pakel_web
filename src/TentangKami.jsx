@@ -1,8 +1,7 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   MapPin,
-  Users,
   Star,
   Leaf,
   Mountain,
@@ -10,14 +9,76 @@ import {
   History,
   Globe,
   Compass,
-  Home,
-  BarChart2,
-  Droplet,
-  Map,
+  Film,
+  Play,
+  Pause,
+  Maximize,
 } from "lucide-react";
 import { colorPalette } from "./colors";
 
 const TentangKami = () => {
+  const videoRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const handlePlayPause = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch((error) => {
+          console.error("Error playing video:", error);
+        });
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e) => {
+    if (videoRef.current && progressBarRef.current) {
+      const rect = progressBarRef.current.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const seekTime = (offsetX / rect.width) * duration;
+      videoRef.current.currentTime = Math.max(0, Math.min(seekTime, duration));
+      setCurrentTime(seekTime);
+    }
+  };
+
+  const handleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      } else if (videoRef.current.webkitRequestFullscreen) {
+        videoRef.current.webkitRequestFullscreen();
+      } else if (videoRef.current.msRequestFullscreen) {
+        videoRef.current.msRequestFullscreen();
+      }
+    }
+  };
+
+  const formatTime = (time) => {
+    if (!time) return "00:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
   return (
     <div style={{ backgroundColor: colorPalette.background }}>
       <style>
@@ -25,10 +86,25 @@ const TentangKami = () => {
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap');
           .font-inter { font-family: 'Inter', sans-serif; }
           .font-merriweather { font-family: 'Merriweather', serif; }
+          .profile-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .thumbnail-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
         `}
       </style>
 
-      {/* Hero Section dengan Parallax Effect */}
       <section className="relative h-[40vh] sm:h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/60 z-10" />
@@ -60,12 +136,11 @@ const TentangKami = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Mengenal lebih dekat kehidupan, sejarah, dan potensi padukuhan kami
+            Mengenal lebih dekat kehidupan dan potensi padukuhan kami
           </motion.p>
         </div>
       </section>
 
-      {/* Ucapan Terima Kasih Section */}
       <section className="py-16 sm:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
           <motion.div
@@ -129,7 +204,6 @@ const TentangKami = () => {
         </div>
       </section>
 
-      {/* Profil Umum dan Sejarah Padukuhan */}
       <section
         className="py-16 sm:py-20"
         style={{ backgroundColor: `${colorPalette.accent}15` }}
@@ -157,17 +231,16 @@ const TentangKami = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Profil & Sejarah Padukuhan
+              Profil Padukuhan
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
-              Mengenal lebih dalam tentang asal usul dan perjalanan Padukuhan
-              Pakel hingga saat ini
+              Mengenal lebih dalam tentang Padukuhan Pakel
             </p>
           </motion.div>
 
-          {/* Profil Umum */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             <motion.div
+              className="lg:col-span-2"
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
@@ -179,165 +252,99 @@ const TentangKami = () => {
               >
                 Profil Umum
               </h3>
-              <div className="prose prose-sm sm:prose text-gray-600 font-inter">
-                <p>
-                  Padukuhan Pakel merupakan salah satu dusun yang berada di Desa
-                  Planjan, Kecamatan Saptosari, Kabupaten Gunung Kidul, Daerah
-                  Istimewa Yogyakarta. Padukuhan ini terletak sekitar 45 km dari
-                  pusat Kota Yogyakarta.
+              <div className="text-gray-600 font-inter text-sm sm:text-base space-y-6">
+                <p className="leading-relaxed">
+                  Padukuhan Pakel, yang terletak di Desa Planjan, Kecamatan
+                  Saptosari, Kabupaten Gunung Kidul, Yogyakarta, adalah
+                  komunitas agraris yang berkembang di tengah lanskap karst yang
+                  menantang. Dengan populasi sekitar 500 jiwa, kehidupan
+                  masyarakat berpusat pada pertanian tadah hujan, menghasilkan
+                  jagung dan singkong sebagai komoditas utama, sebagaimana telah
+                  dijelaskan sebelumnya. Selain itu, masyarakat Pakel dikenal
+                  akan ketangguhannya dalam menghadapi tantangan lingkungan,
+                  seperti kekeringan musiman, melalui sistem irigasi tradisional
+                  dan kerja sama komunal.
                 </p>
-                <p>
-                  Dengan populasi sekitar 500 jiwa, Padukuhan Pakel merupakan
-                  komunitas agraris yang hidup berdampingan dengan alam.
-                  Mayoritas penduduk bermata pencaharian sebagai petani dengan
-                  komoditas utama jagung manis dan singkong premium.
-                </p>
-                <p>
-                  Selain pertanian, padukuhan ini juga mengembangkan sektor UMKM
-                  yang menjadi tulang punggung ekonomi lokal. Produk-produk
-                  seperti keripik singkong dan olahan jagung menjadi kebanggaan
-                  masyarakat setempat.
+                <p className="leading-relaxed">
+                  Kehidupan sosial di Pakel ditandai dengan semangat gotong
+                  royong yang kuat, terlihat dari kegiatan seperti pasar
+                  mingguan, kerja bakti, dan perayaan tradisi Jawa seperti{" "}
+                  <span
+                    style={{ fontWeight: "bold", color: colorPalette.primary }}
+                  >
+                    rasulan
+                  </span>{" "}
+                  dan{" "}
+                  <span
+                    style={{ fontWeight: "bold", color: colorPalette.primary }}
+                  >
+                    sadranan
+                  </span>
+                  . UMKM lokal tidak hanya mengolah hasil pertanian, tetapi juga
+                  menghasilkan kerajinan tangan dan produk kuliner seperti tiwul
+                  dan gethuk, yang semakin berkembang dengan adopsi teknologi
+                  digital untuk promosi. Infrastruktur seperti jalan desa, balai
+                  dusun, dan posyandu terus ditingkatkan, didukung oleh
+                  pembangunan Jalur Jalan Lintas Selatan (JJLS) pada 2024-2025,
+                  yang membuka akses ke destinasi wisata alam seperti gua karst
+                  dan perbukitan hijau, menarik minat wisatawan untuk menikmati
+                  keindahan alam dan budaya lokal yang autentik.
                 </p>
               </div>
             </motion.div>
 
             <motion.div
-              className="relative"
+              className="lg:col-span-1 space-y-4"
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              <img
-                src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=600&h=400&fit=crop"
-                alt="Pemandangan Padukuhan Pakel"
-                className="w-full h-64 sm:h-80 object-cover rounded-2xl shadow-lg"
-              />
-              <motion.div
-                className="absolute -bottom-4 -right-4 w-24 h-24 rounded-2xl overflow-hidden shadow-lg"
-                initial={{ scale: 0 }}
-                whileInView={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                viewport={{ once: true }}
-              >
+              <div className="relative overflow-hidden rounded-2xl shadow-lg group">
                 <img
-                  src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=300&fit=crop"
-                  alt="Hasil Pertanian"
-                  className="w-full h-full object-cover"
+                  src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=600&h=450&fit=crop"
+                  alt="Pemandangan Padukuhan Pakel"
+                  className="profile-image transition-transform duration-500 group-hover:scale-110"
                 />
-              </motion.div>
-            </motion.div>
-          </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </div>
 
-          {/* Sejarah Padukuhan */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <h3
-              className="text-xl sm:text-2xl font-merriweather font-bold text-center mb-6"
-              style={{ color: colorPalette.text }}
-            >
-              Sejarah Padukuhan
-            </h3>
-            <div className="relative">
-              {/* Timeline Line */}
-              <div
-                className="absolute left-0 md:left-1/2 transform md:translate-x-[-50%] top-0 bottom-0 w-1 md:w-1"
-                style={{ backgroundColor: `${colorPalette.primary}40` }}
-              />
-
-              {/* Timeline Items */}
-              {[
-                {
-                  year: "Abad 18",
-                  title: "Awal Mula Desa Planjan",
-                  content:
-                    "Desa Planjan, tempat Padukuhan Pakel berada, didirikan oleh Mbah Rono atau Kyai Rono, seorang tokoh yang membuka lahan di wilayah ini. Nama Planjan berasal dari kata 'pelan-pelan ojoan', yang berarti perjalanan perlahan menuju tujuan, mencerminkan perjuangan awal penduduk dalam membangun padukuhan.",
-                },
-                {
-                  year: "1920-an",
-                  title: "Perkembangan Awal Padukuhan Pakel",
-                  content:
-                    "Padukuhan Pakel mulai dikenal sebagai bagian dari Desa Planjan. Penduduk mulai menetap dan mengembangkan pertanian tadah hujan, terutama menanam jagung dan singkong, di lahan kapur khas Gunung Kidul.",
-                },
-                {
-                  year: "1940-an",
-                  title: "Peran dalam Perjuangan Kemerdekaan",
-                  content:
-                    "Penduduk Desa Planjan, termasuk Padukuhan Pakel, turut berpartisipasi dalam perjuangan kemerdekaan Indonesia. Beberapa tokoh lokal menjadi bagian dari gerakan melawan penjajahan, mendirikan pos-pos perjuangan di wilayah ini.",
-                },
-                {
-                  year: "1980-an",
-                  title: "Pembangunan Infrastruktur",
-                  content:
-                    "Pembangunan jalan padukuhan dan fasilitas umum mulai dilakukan di Planjan, termasuk di Padukuhan Pakel. Akses yang lebih baik memungkinkan hasil pertanian seperti jagung dan singkong dipasarkan ke wilayah lain.",
-                },
-                {
-                  year: "2000-an",
-                  title: "Kebangkitan UMKM",
-                  content:
-                    "Padukuhan Pakel mulai mengembangkan UMKM berbasis hasil pertanian, seperti keripik singkong dan olahan jagung, yang menjadi ciri khas padukuhan. Inisiatif ini memperkuat ekonomi lokal dan memperkenalkan produk padukuhan ke pasar yang lebih luas.",
-                },
-                {
-                  year: "2020",
-                  title: "Era Digitalisasi",
-                  content:
-                    "Padukuhan Pakel mengadopsi teknologi digital untuk administrasi padukuhan dan promosi UMKM. Peluncuran website padukuhan menjadi langkah penting dalam memperkenalkan potensi Padukuhan Pakel kepada dunia.",
-                },
-              ].map((item, index) => (
+              <div className="grid grid-cols-2 gap-4">
                 <motion.div
-                  key={index}
-                  className={`relative flex flex-col md:flex-row items-start mb-12 ${
-                    index % 2 === 0 ? "md:flex-row-reverse" : ""
-                  }`}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                  className="relative overflow-hidden rounded-xl shadow-md group"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
                   viewport={{ once: true }}
                 >
-                  {/* Timeline Dot */}
-                  <div
-                    className="absolute left-[-8px] md:left-1/2 md:transform md:translate-x-[-50%] w-4 h-4 rounded-full z-10"
-                    style={{ backgroundColor: colorPalette.primary }}
+                  <img
+                    src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=300&fit=crop"
+                    alt="Hasil Pertanian"
+                    className="thumbnail-image transition-transform duration-500 group-hover:scale-110"
                   />
-
-                  {/* Content */}
-                  <div
-                    className={`md:w-1/2 ${
-                      index % 2 === 0 ? "md:pr-16" : "md:pl-16"
-                    } pl-8 md:pl-8`}
-                  >
-                    <div
-                      className="inline-block px-3 py-1 rounded-full text-sm font-bold mb-2"
-                      style={{
-                        backgroundColor: `${colorPalette.primary}20`,
-                        color: colorPalette.primary,
-                      }}
-                    >
-                      <Calendar className="w-4 h-4 inline-block mr-1" />
-                      {item.year}
-                    </div>
-                    <h4
-                      className="text-lg font-merriweather font-bold mb-2"
-                      style={{ color: colorPalette.text }}
-                    >
-                      {item.title}
-                    </h4>
-                    <p className="text-gray-600 font-inter text-sm">
-                      {item.content}
-                    </p>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </motion.div>
-              ))}
-            </div>
-          </motion.div>
+
+                <motion.div
+                  className="relative overflow-hidden rounded-xl shadow-md group"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  viewport={{ once: true }}
+                >
+                  <img
+                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop"
+                    alt="Kehidupan Desa"
+                    className="thumbnail-image transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Geografis Padukuhan Section */}
       <section
         className="py-16 sm:py-20"
         style={{ backgroundColor: `${colorPalette.accent}15` }}
@@ -355,7 +362,7 @@ const TentangKami = () => {
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: `${colorPalette.primary}20` }}
               >
-                <Globe
+                <Film
                   className="w-6 h-6"
                   style={{ color: colorPalette.primary }}
                 />
@@ -365,488 +372,98 @@ const TentangKami = () => {
               className="text-2xl sm:text-3xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
             >
-              Geografis Padukuhan
+              Cerita dari Pakel
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
-              Mengenal kondisi geografis dan batas wilayah Padukuhan Pakel
+              Rasakan kehangatan kehidupan desa, kekayaan tradisi, dan semangat
+              masyarakat Padukuhan Pakel dalam cerita yang hidup dan penuh
+              makna.
             </p>
           </motion.div>
 
-          {/* Penjelasan Geografis */}
           <motion.div
-            className="bg-white rounded-3xl shadow-lg overflow-hidden mb-10"
+            className="bg-white rounded-3xl shadow-xl overflow-hidden group max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <div className="p-6 sm:p-8">
-              <h3
-                className="text-xl font-merriweather font-bold mb-6"
-                style={{ color: colorPalette.text }}
+            <div className="relative w-full aspect-video">
+              <video
+                ref={videoRef}
+                className="w-full h-full object-cover"
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+                onError={() =>
+                  console.error(
+                    "Video failed to load. Check path: /videos/pakel.mp4"
+                  )
+                }
               >
-                Kondisi Geografis
-              </h3>
-              <div className="space-y-6">
-                {/* Topografi */}
-                <div
-                  className="flex items-start border-l-4 pl-4"
-                  style={{ borderColor: colorPalette.primary }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                    style={{ backgroundColor: `${colorPalette.primary}20` }}
-                  >
-                    <Mountain
-                      className="w-5 h-5"
-                      style={{ color: colorPalette.primary }}
-                    />
-                  </div>
-                  <div>
-                    <h4
-                      className="text-lg font-merriweather font-semibold mb-2"
-                      style={{ color: colorPalette.text }}
-                    >
-                      Topografi
-                    </h4>
-                    <p className="text-gray-600 font-inter text-sm sm:text-base">
-                      Padukuhan Pakel terletak di dataran tinggi Gunung Kidul
-                      dengan ketinggian sekitar 200-300 meter di atas permukaan
-                      laut. Padukuhan ini memiliki topografi berbukit dengan
-                      tanah kapur yang khas dari kawasan karst Gunung Kidul.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Iklim */}
-                <div
-                  className="flex items-start border-l-4 pl-4"
-                  style={{ borderColor: colorPalette.secondary }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                    style={{ backgroundColor: `${colorPalette.secondary}20` }}
-                  >
-                    <Droplet
-                      className="w-5 h-5"
-                      style={{ color: colorPalette.secondary }}
-                    />
-                  </div>
-                  <div>
-                    <h4
-                      className="text-lg font-merriweather font-semibold mb-2"
-                      style={{ color: colorPalette.text }}
-                    >
-                      Iklim
-                    </h4>
-                    <p className="text-gray-600 font-inter text-sm sm:text-base">
-                      Iklim di Padukuhan Pakel termasuk dalam kategori tropis
-                      dengan dua musim utama: musim kemarau (April-Oktober) dan
-                      musim hujan (November-Maret). Curah hujan rata-rata
-                      mencapai 2000-2500 mm per tahun.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Luas Wilayah */}
-                <div
-                  className="flex items-start border-l-4 pl-4"
-                  style={{ borderColor: colorPalette.accent }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                    style={{ backgroundColor: `${colorPalette.accent}20` }}
-                  >
-                    <Map
-                      className="w-5 h-5"
-                      style={{ color: colorPalette.accent }}
-                    />
-                  </div>
-                  <div>
-                    <h4
-                      className="text-lg font-merriweather font-semibold mb-2"
-                      style={{ color: colorPalette.text }}
-                    >
-                      Luas Wilayah
-                    </h4>
-                    <p className="text-gray-600 font-inter text-sm sm:text-base">
-                      Luas wilayah Padukuhan Pakel sekitar 150 hektar, dengan
-                      pembagian lahan sebagai berikut:
-                    </p>
-                    <ul className="list-disc pl-5 mt-2 text-gray-600 font-inter text-sm sm:text-base">
-                      <li>Lahan pertanian: 100 hektar (67%)</li>
-                      <li>Pemukiman: 30 hektar (20%)</li>
-                      <li>Fasilitas umum: 10 hektar (7%)</li>
-                      <li>Lahan kosong/hutan: 10 hektar (6%)</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Peta Padukuhan */}
-          <motion.div
-            className="bg-white rounded-3xl shadow-lg overflow-hidden mb-10"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            <div className="p-6 sm:p-8">
-              <h3
-                className="text-xl font-merriweather font-bold mb-4"
-                style={{ color: colorPalette.text }}
-              >
-                Peta Padukuhan
-              </h3>
-              <div className="relative h-[300px] sm:h-[400px] rounded-xl overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d10687.280652504038!2d110.51977499442644!3d-8.071815238856141!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7bb1d6a0b1c423%3A0x192f685f2cb154ac!2sPakel%2C%20Planjan%2C%20Saptosari%2C%20Gunungkidul%20Regency%2C%20Special%20Region%20of%20Yogyakarta!5e0!3m2!1sen!2sid!4v1749831526380!5m2!1sen!2sid"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen=""
-                  loading="lazy"
+                <source src="/videos/pakel.mp4" type="video/mp4" />
+                <img
+                  src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop"
+                  alt="Fallback Pemandangan Padukuhan Pakel"
+                  className="w-full h-full object-cover"
                 />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Batas Wilayah */}
-          <motion.div
-            className="bg-white rounded-3xl shadow-lg overflow-hidden"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            viewport={{ once: true }}
-          >
-            <div className="p-6 sm:p-8">
-              <h3
-                className="text-xl font-merriweather font-bold mb-4"
-                style={{ color: colorPalette.text }}
-              >
-                Batas Wilayah
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[
-                  {
-                    direction: "Utara",
-                    border: "Padukuhan Ngloro",
-                    icon: Compass,
-                  },
-                  {
-                    direction: "Timur",
-                    border: "Padukuhan Kanigoro",
-                    icon: Compass,
-                  },
-                  {
-                    direction: "Selatan",
-                    border: "Padukuhan Monggol",
-                    icon: Compass,
-                  },
-                  {
-                    direction: "Barat",
-                    border: "Desa Planjan",
-                    icon: Compass,
-                  },
-                ].map((item, index) => (
-                  <motion.div
-                    key={index}
-                    className="flex items-start p-4 rounded-xl"
-                    style={{ backgroundColor: `${colorPalette.accent}10` }}
-                    initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    whileHover={{ y: -5 }}
+              </video>
+              {!isPlaying && (
+                <button
+                  onClick={handlePlayPause}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Play
+                    className="w-16 h-16 text-white"
+                    style={{ color: colorPalette.primary }}
+                  />
+                </button>
+              )}
+              {isPlaying && (
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button
+                    onClick={handlePlayPause}
+                    className="p-2 rounded-full hover:bg-white/20"
                   >
+                    {isPlaying ? (
+                      <Pause className="w-6 h-6" />
+                    ) : (
+                      <Play className="w-6 h-6" />
+                    )}
+                  </button>
+                  <div className="flex items-center flex-1 mx-4">
+                    <span className="text-sm font-inter">
+                      {formatTime(currentTime)}
+                    </span>
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
-                      style={{ backgroundColor: `${colorPalette.primary}20` }}
+                      ref={progressBarRef}
+                      className="flex-1 mx-2 h-2 bg-gray-300 rounded-full cursor-pointer"
+                      onClick={handleSeek}
                     >
-                      <item.icon
-                        className="w-5 h-5"
-                        style={{ color: colorPalette.primary }}
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(currentTime / duration) * 100}%`,
+                          backgroundColor: colorPalette.primary,
+                        }}
                       />
                     </div>
-                    <div>
-                      <h4
-                        className="text-lg font-merriweather font-bold"
-                        style={{ color: colorPalette.text }}
-                      >
-                        {item.direction}
-                      </h4>
-                      <p className="text-gray-600 font-inter">
-                        Berbatasan dengan {item.border}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <span className="text-sm font-inter">
+                      {formatTime(duration)}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleFullscreen}
+                    className="p-2 rounded-full hover:bg-white/20"
+                  >
+                    <Maximize className="w-6 h-6" />
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Demografi Padukuhan Section */}
-      <section className="py-16 sm:py-20">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-12">
-          <motion.div
-            className="text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <div className="flex items-center justify-center mb-4">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: `${colorPalette.primary}20` }}
-              >
-                <Users
-                  className="w-6 h-6"
-                  style={{ color: colorPalette.primary }}
-                />
-              </div>
-            </div>
-            <h2
-              className="text-2xl sm:text-3xl font-merriweather font-bold"
-              style={{ color: colorPalette.text }}
-            >
-              Demografi Padukuhan
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto font-inter mt-4">
-              Data kependudukan dan statistik sosial Padukuhan Pakel
-            </p>
-          </motion.div>
-
-          {/* Statistik Penduduk */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {[
-              {
-                title: "Jumlah Penduduk",
-                value: "500 Jiwa",
-                icon: Users,
-                color: colorPalette.primary,
-              },
-              {
-                title: "Jumlah KK",
-                value: "125 KK",
-                icon: Home,
-                color: colorPalette.secondary,
-              },
-              {
-                title: "Kepadatan",
-                value: "3,3 Jiwa/Ha",
-                icon: BarChart2,
-                color: colorPalette.accent,
-              },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                className="bg-white rounded-3xl shadow-lg overflow-hidden p-6"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -10 }}
-              >
-                <div className="flex items-center mb-4">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center mr-4"
-                    style={{ backgroundColor: `${item.color}20` }}
-                  >
-                    <item.icon
-                      className="w-6 h-6"
-                      style={{ color: item.color }}
-                    />
-                  </div>
-                  <div>
-                    <p className="text-gray-500 font-inter text-sm">
-                      {item.title}
-                    </p>
-                    <h4
-                      className="text-2xl font-merriweather font-bold"
-                      style={{ color: colorPalette.text }}
-                    >
-                      {item.value}
-                    </h4>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Grafik Demografi */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <motion.div
-              className="bg-white rounded-3xl shadow-lg overflow-hidden"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <div className="p-6 sm:p-8">
-                <h3
-                  className="text-xl font-merriweather font-bold mb-4"
-                  style={{ color: colorPalette.text }}
-                >
-                  Komposisi Penduduk
-                </h3>
-                <div className="space-y-6">
-                  {[
-                    {
-                      title: "Berdasarkan Jenis Kelamin",
-                      data: [
-                        { label: "Laki-laki", value: 240, percentage: 48 },
-                        { label: "Perempuan", value: 260, percentage: 52 },
-                      ],
-                    },
-                    {
-                      title: "Berdasarkan Usia",
-                      data: [
-                        { label: "0-14 tahun", value: 100, percentage: 20 },
-                        { label: "15-64 tahun", value: 350, percentage: 70 },
-                        { label: "65+ tahun", value: 50, percentage: 10 },
-                      ],
-                    },
-                  ].map((category, idx) => (
-                    <div key={idx} className="mb-6">
-                      <h4
-                        className="text-base font-merriweather font-semibold mb-3"
-                        style={{ color: colorPalette.text }}
-                      >
-                        {category.title}
-                      </h4>
-                      <div className="space-y-3">
-                        {category.data.map((item, index) => (
-                          <div key={index}>
-                            <div className="flex justify-between mb-1">
-                              <span className="text-sm font-inter text-gray-600">
-                                {item.label}
-                              </span>
-                              <span className="text-sm font-inter font-semibold text-gray-700">
-                                {item.value} jiwa ({item.percentage}%)
-                              </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <motion.div
-                                className="h-full rounded-full"
-                                style={{
-                                  backgroundColor: colorPalette.primary,
-                                }}
-                                initial={{ width: 0 }}
-                                whileInView={{ width: `${item.percentage}%` }}
-                                transition={{ duration: 1, delay: 0.2 * index }}
-                                viewport={{ once: true }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="bg-white rounded-3xl shadow-lg overflow-hidden"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <div className="p-6 sm:p-8">
-                <h3
-                  className="text-xl font-merriweather font-bold mb-4"
-                  style={{ color: colorPalette.text }}
-                >
-                  Mata Pencaharian
-                </h3>
-                <div className="space-y-4">
-                  {[
-                    { label: "Petani", value: 250, percentage: 70 },
-                    { label: "Pedagang/UMKM", value: 50, percentage: 14 },
-                    { label: "PNS/Guru", value: 15, percentage: 4 },
-                    { label: "Buruh", value: 30, percentage: 8 },
-                    { label: "Lainnya", value: 15, percentage: 4 },
-                  ].map((item, index) => (
-                    <div key={index}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-inter text-gray-600">
-                          {item.label}
-                        </span>
-                        <span className="text-sm font-inter font-semibold text-gray-700">
-                          {item.percentage}%
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full rounded-full"
-                          style={{
-                            backgroundColor:
-                              index === 0
-                                ? colorPalette.primary
-                                : index === 1
-                                ? colorPalette.secondary
-                                : `${colorPalette.accent}`,
-                          }}
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${item.percentage}%` }}
-                          transition={{ duration: 1, delay: 0.2 * index }}
-                          viewport={{ once: true }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8">
-                  <h4
-                    className="text-base font-merriweather font-semibold mb-3"
-                    style={{ color: colorPalette.text }}
-                  >
-                    Tingkat Pendidikan
-                  </h4>
-                  <div className="space-y-3">
-                    {[
-                      { label: "SD/Sederajat", value: 150, percentage: 30 },
-                      { label: "SMP/Sederajat", value: 175, percentage: 35 },
-                      { label: "SMA/Sederajat", value: 125, percentage: 25 },
-                      { label: "Perguruan Tinggi", value: 50, percentage: 10 },
-                    ].map((item, index) => (
-                      <div key={index}>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm font-inter text-gray-600">
-                            {item.label}
-                          </span>
-                          <span className="text-sm font-inter font-semibold text-gray-700">
-                            {item.percentage}%
-                          </span>
-                        </div>
-                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: colorPalette.secondary }}
-                            initial={{ width: 0 }}
-                            whileInView={{ width: `${item.percentage}%` }}
-                            transition={{ duration: 1, delay: 0.2 * index }}
-                            viewport={{ once: true }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
       <section
         className="py-16 sm:py-20"
         style={{ backgroundColor: `${colorPalette.primary}10` }}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   MapPin,
@@ -14,10 +14,18 @@ import {
   Twitter,
   ArrowUp,
   Home,
+  Play,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { colorPalette } from "./colors";
 import { getUmkms, getNews, getGallery } from "./firebaseUtils";
+
+const stripHtml = (html) => {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+};
 
 const Homepage = () => {
   const [scrollY, setScrollY] = useState(0);
@@ -27,24 +35,23 @@ const Homepage = () => {
   const [galleryImages, setGalleryImages] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+  const [error, setError] = useState(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch UMKM data
         const umkms = await getUmkms();
-        setUmkmProducts(umkms.slice(0, 3)); // Limit to 3 for display
-
-        // Fetch Gallery data
+        setUmkmProducts(umkms.slice(0, 3));
         const gallery = await getGallery();
-        setGalleryImages(gallery.slice(0, 4)); // Limit to 4 for display
-
-        // Fetch News data
+        setGalleryImages(gallery.slice(0, 4));
         const news = await getNews();
-        setNewsItems(news.slice(0, 3)); // Limit to 3 for display
+        setNewsItems(news.slice(0, 3));
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError("Gagal memuat data. Silakan coba lagi nanti.");
       } finally {
         setLoading(false);
       }
@@ -77,14 +84,47 @@ const Homepage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return "Unknown Date";
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    const options = { day: "numeric", month: "long", year: "numeric" };
-    return date.toLocaleDateString("id-ID", options);
+  const formatDate = (dateStr) => {
+    if (!dateStr || typeof dateStr !== "string") {
+      return "Tanggal tidak tersedia";
+    }
+    let dateObj;
+    if (dateStr.includes("/")) {
+      const [day, month, year] = dateStr.split("/");
+      dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      const [day, month, year] = dateStr.split(" ");
+      const monthMap = {
+        Januari: 0,
+        Februari: 1,
+        Maret: 2,
+        April: 3,
+        Mei: 4,
+        Juni: 5,
+        Juli: 6,
+        Agustus: 7,
+        September: 8,
+        Oktober: 9,
+        November: 10,
+        Desember: 11,
+      };
+      dateObj = new Date(
+        parseInt(year),
+        monthMap[month] || parseInt(month) - 1,
+        parseInt(day)
+      );
+    }
+    if (isNaN(dateObj.getTime())) {
+      return "Tanggal tidak valid";
+    }
+    return dateObj.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   };
 
-  // Fungsi untuk format harga berdasarkan varian
   const formatPrice = (variants) => {
     if (!variants || variants.length === 0) {
       return "Harga tidak tersedia";
@@ -100,11 +140,31 @@ const Homepage = () => {
     }
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const unit = variants[0].unit || "pcs"; // Gunakan unit dari varian pertama
+    const unit = variants[0].unit || "pcs";
     return minPrice === maxPrice
       ? `Rp ${minPrice}/${unit}`
       : `Rp ${minPrice} - ${maxPrice}/${unit}`;
   };
+
+  const handleVideoOpen = () => {
+    setIsVideoOpen(true);
+  };
+
+  const handleVideoClose = () => {
+    setIsVideoOpen(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center">
+        <p className="text-red-500 font-inter text-lg">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: colorPalette.background }}>
@@ -114,10 +174,119 @@ const Homepage = () => {
           .font-inter { font-family: 'Inter', sans-serif; }
           .font-merriweather { font-family: 'Merriweather', serif; }
           .transform-gpu { transform: translate3d(0, 0, 0); }
+          .pulse-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border: 2px solid ${colorPalette.accent};
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+          }
+          /* Enhanced styles for Tentang section */
+          .tentang-section {
+            background: linear-gradient(to bottom, ${colorPalette.background}, rgba(154, 230, 180, 0.1));
+            padding: 2rem 1rem;
+          }
+          @media (min-width: 640px) {
+            .tentang-section {
+              padding: 3rem 1.5rem;
+            }
+          }
+          @media (min-width: 1024px) {
+            .tentang-section {
+              padding: 4rem 2rem;
+            }
+          }
+          .tentang-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1rem;
+          }
+          .tentang-title {
+            font-size: 1.5rem;
+            line-height: 1.2;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+          }
+          @media (min-width: 640px) {
+            .tentang-title {
+              font-size: 2rem;
+            }
+          }
+          @media (min-width: 1024px) {
+            .tentang-title {
+              font-size: 2.5rem;
+            }
+          }
+          .tentang-subtitle {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: #4B5563;
+            max-width: 36rem;
+            margin: 0 auto;
+          }
+          @media (min-width: 640px) {
+            .tentang-subtitle {
+              font-size: 1rem;
+            }
+          }
+          .tentang-text {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: ${colorPalette.text};
+            max-width: 32rem;
+          }
+          @media (min-width: 640px) {
+            .tentang-text {
+              font-size: 1rem;
+            }
+          }
+          .highlight-text {
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+            color: ${colorPalette.primary};
+          }
+          .tentang-button {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.875rem;
+            border-radius: 9999px;
+            background-color: ${colorPalette.primary};
+            color: white;
+            font-weight: 600;
+          }
+          @media (min-width: 640px) {
+            .tentang-button {
+              padding: 0.75rem 2rem;
+              font-size: 1rem;
+            }
+          }
+          .tentang-image {
+            width: 100%;
+            height: 12rem;
+            object-fit vidro: cover;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          @media (min-width: 640px) {
+            .tentang-image {
+              height: 16rem;
+            }
+          }
+          @media (min-width: 1024px) {
+            .tentang-image {
+              height: 20rem;
+            }
+          }
         `}
       </style>
 
-      {/* Hero Section */}
       <section
         id="beranda"
         className="relative h-[60vh] sm:h-[80vh] md:h-[100vh] flex items-center justify-center overflow-hidden"
@@ -144,7 +313,6 @@ const Homepage = () => {
             />
           </video>
         </div>
-
         <div className="relative z-20 text-center text-white px-4 sm:px-4 md:px-6 max-w-2xl mx-auto">
           <motion.h1
             className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-merriweather font-bold mb-3 sm:mb-4"
@@ -170,137 +338,243 @@ const Homepage = () => {
             Kidul, Yogyakarta.
           </motion.p>
           <motion.div
-            className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center"
+            className="flex flex-col items-center gap-6 sm:gap-8"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <Link to="/tentang">
-              <motion.button
-                className="px-4 py-2 sm:px-6 sm:py-3 rounded-full font-inter font-semibold text-sm sm:text-base text-white"
-                style={{ backgroundColor: colorPalette.primary }}
-                whileHover={{
-                  scale: 1.05,
-                  backgroundColor: colorPalette.secondary,
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Jelajahi Padukuhan
-              </motion.button>
-            </Link>
-            <Link to="/umkm">
-              <motion.button
-                className="px-4 py-2 sm:px-6 sm:py-3 rounded-full font-inter font-semibold text-sm sm:text-base border-2"
-                style={{
-                  borderColor: colorPalette.accent,
-                  color: colorPalette.accent,
-                }}
-                whileHover={{
-                  scale: 1.05,
-                  backgroundColor: colorPalette.accent,
-                  color: colorPalette.text,
-                }}
-                transition={{ duration: 0.3 }}
-              >
-                Lihat UMKM
-              </motion.button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
+              <Link to="/tentang">
+                <motion.button
+                  className="px-4 py-2 sm:px-6 sm:py-3 rounded-full font-inter font-semibold text-sm sm:text-base text-white"
+                  style={{
+                    backgroundColor: "transparent",
+                    border: `2px solid ${colorPalette.primary}`,
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    backgroundColor: colorPalette.primary,
+                    borderColor: colorPalette.primary,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  Jelajahi Padukuhan
+                </motion.button>
+              </Link>
+              <Link to="/umkm">
+                <motion.button
+                  className="px-4 py-2 sm:px-6 sm:py-3 rounded-full font-inter font-semibold text-sm sm:text-base border-2"
+                  style={{
+                    borderColor: colorPalette.accent,
+                    color: colorPalette.accent,
+                    backgroundColor: "transparent",
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                    backgroundColor: colorPalette.accent,
+                    color: colorPalette.text,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  Lihat UMKM
+                </motion.button>
+              </Link>
+            </div>
+
+            <motion.div
+              className="flex flex-col items-center gap-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <div className="relative">
+                <motion.button
+                  onClick={handleVideoOpen}
+                  className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white/60 backdrop-blur-sm"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                  }}
+                  whileHover={{
+                    scale: 1.1,
+                    backgroundColor: "rgba(255, 255, 255, 0.2)",
+                    borderColor: "rgba(255, 255, 255, 0.8)",
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <span className="pulse-ring"></span>
+                  <Play
+                    className="w-6 h-6 sm:w-8 sm:h-8 ml-1"
+                    fill="currentColor"
+                  />
+                </motion.button>
+              </div>
+
+              <div className="text-center">
+                <motion.p
+                  className="text-sm sm:text-base font-inter text-white font-medium tracking-wide"
+                  style={{
+                    textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+                    letterSpacing: "0.5px",
+                  }}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Tonton Dokumenter
+                </motion.p>
+                <motion.p
+                  className="text-xs sm:text-sm font-inter text-white/80 mt-0.5"
+                  style={{
+                    textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+                    letterSpacing: "0.3px",
+                  }}
+                >
+                  Padukuhan Pakel
+                </motion.p>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Tentang Section */}
-      <section className="py-10 sm:py-14 md:py-20 relative overflow-hidden">
+      <AnimatePresence>
+        {isVideoOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={handleVideoClose}
+          >
+            <motion.div
+              className="relative w-full max-w-4xl mx-4 sm:mx-6"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleVideoClose}
+                className="absolute -top-12 right-0 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                style={{ color: "white" }}
+              >
+                <X className="w-6 h-6 sm:w-8 sm:h-8" />
+              </button>
+              <video
+                ref={videoRef}
+                className="w-full h-auto rounded-2xl shadow-lg"
+                controls
+                onError={() =>
+                  console.error(
+                    "Video failed to load. Check path: /videos/pakel.mp4"
+                  )
+                }
+              >
+                <source src="/videos/pakel.mp4" type="video/mp4" />
+                <img
+                  src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop"
+                  alt="Fallback Pemandangan Padukuhan Pakel"
+                  className="w-full h-full object-cover"
+                />
+              </video>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <section
+        id="tentang"
+        className="tentang-section relative overflow-hidden"
+      >
         <div
           className="absolute inset-0 z-0 opacity-10"
           style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232F855A' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30v4h2v-4h4v-2h-4v-4h-2v4h-4v2h4zm-20 4h4v-2h-4v-4h-2v4h-4v2h4v4h2v-4zm20 20h-4v2h4v4h2v-4h4v-2h-4v-4h-2v4zm-20-4v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           }}
         />
-        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-          <motion.div className="text-center mb-6 sm:mb-12">
+        <div className="relative z-10 tentang-container">
+          <motion.div className="text-center mb-6 sm:mb-8 md:mb-10">
             <h2
-              className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
+              className="tentang-title font-merriweather"
               style={{ color: colorPalette.text }}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
               Tentang Padukuhan Pakel
             </h2>
             <p
-              className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              className="tentang-subtitle font-inter mt-2"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
-              Mengenal lebih dekat padukuhan yang kaya akan tradisi dan
-              kehidupan agraris
+              Mengenal lebih dekat padukuhan yang kaya akan hasil bumi dan
+              kehidupan masyarakat agraris
             </p>
           </motion.div>
-          <div className="grid lg:grid-cols-2 gap-5 sm:gap-7 md:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 items-center">
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
               <motion.p
-                className="text-sm sm:text-base md:text-lg font-inter leading-relaxed mb-3 sm:mb-5"
-                style={{ color: colorPalette.text }}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                className="tentang-text font-inter mb-4"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <span className="font-merriweather text-xl sm:text-2xl md:text-3xl">
+                <span className="highlight-text text-lg sm:text-xl">
                   Padukuhan Pakel
-                </span>
-                , sebuah permata tersembunyi di{" "}
-                <span className="font-semibold">
-                  Desa Planjan, Saptosari, Gunung Kidul, Yogyakarta
-                </span>
-                , adalah oase budaya dan kehidupan agraris. Dengan populasi
-                sekitar{" "}
-                <span className="font-merriweather text-lg sm:text-xl md:text-2xl">
-                  500 jiwa
-                </span>
-                , padukuhan ini hidup dari denyut nadi pertanian, menghasilkan{" "}
-                <span className="font-semibold">
-                  jagung manis dan singkong premium
                 </span>{" "}
-                yang menjadi kebanggaan lokal.
+                merupakan salah satu dusun di Desa Planjan, Kecamatan Saptosari,
+                Kabupaten Gunung Kidul, Daerah Istimewa Yogyakarta, yang dikenal
+                sebagai wilayah pedesaan dengan potensi alam karst khas Gunung
+                Kidul. Dengan estimasi populasi sekitar{" "}
+                <span className="highlight-text">500 jiwa</span>, padukuhan ini
+                bergantung pada sektor pertanian tadah hujan, menghasilkan
+                komoditas utama seperti{" "}
+                <span className="highlight-text">jagung dan singkong</span> yang
+                menjadi andalan masyarakat setempat.
               </motion.p>
               <motion.p
-                className="text-sm sm:text-base font-inter leading-relaxed mb-3 sm:mb-5"
-                style={{ color: colorPalette.text }}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                className="tentang-text font-inter mb-4"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
               >
-                Selain pertanian,{" "}
-                <span className="font-semibold">UMKM inovatif</span> dan{" "}
-                <span className="font-semibold">perdagangan lokal</span> menjadi
-                pilar ekonomi, mencerminkan semangat gotong royong dan
-                kewirausahaan. Di tengah lanskap Gunung Kidul yang memesona,
-                Padukuhan Pakel menawarkan harmoni antara tradisi dan
-                modernitas, mengundang setiap pengunjung untuk merasakan
-                kehangatan komunitas dan kekayaan alamnya.
+                Di samping pertanian, aktivitas{" "}
+                <span className="highlight-text">UMKM lokal</span> turut
+                mendukung perekonomian, termasuk pengolahan hasil bumi dan
+                perdagangan kecil-kecilan, yang mencerminkan nilai gotong royong
+                serta adaptasi terhadap kondisi tanah kapur. Terletak di tengah
+                lanskap bukit dan gua yang memesona, Padukuhan Pakel menjaga
+                harmoni antara{" "}
+                <span className="highlight-text">tradisi Jawa</span>, kehidupan
+                komunal, dan upaya pembangunan berkelanjutan, mengajak
+                pengunjung untuk menikmati keaslian budaya serta keramahan
+                warganya.
               </motion.p>
               <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.6 }}
               >
                 <Link to="/tentang">
                   <motion.button
-                    className="px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-full font-inter font-semibold text-sm sm:text-base text-white"
-                    style={{ backgroundColor: colorPalette.primary }}
+                    className="tentang-button font-inter"
                     whileHover={{
                       scale: 1.05,
                       backgroundColor: colorPalette.secondary,
                     }}
+                    transition={{ duration: 0.3 }}
                   >
                     Tentang Kami
                   </motion.button>
@@ -309,18 +583,18 @@ const Homepage = () => {
             </motion.div>
             <motion.div
               className="relative"
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
               <img
                 src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop"
                 alt="Kehidupan Padukuhan Pakel"
-                className="w-full h-[250px] sm:h-[300px] md:h-[350px] object-cover rounded-2xl shadow-lg"
+                className="tentang-image"
               />
               <motion.div
-                className="absolute -bottom-3 -left-3 w-10 h-10 sm:w-14 sm:h-14 rounded-full"
+                className="absolute -bottom-2 -left-2 w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                 style={{ backgroundColor: colorPalette.secondary }}
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -330,115 +604,6 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Visi Misi Section */}
-      <section
-        className="py-10 sm:py-14 md:py-20"
-        style={{
-          background: `linear-gradient(to bottom, ${colorPalette.background}, ${colorPalette.accent}20)`,
-        }}
-      >
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
-          <motion.div className="text-center mb-6 sm:mb-12">
-            <h2
-              className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
-              style={{ color: colorPalette.text }}
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              Visi & Misi Kami
-            </h2>
-            <p
-              className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              Komitmen untuk masa depan padukuhan yang berkelanjutan dan
-              sejahtera
-            </p>
-          </motion.div>
-          <div className="flex flex-col md:flex-row gap-5 sm:gap-7">
-            <motion.div
-              className="flex-1 bg-white rounded-2xl shadow-lg p-5 sm:p-7"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <div className="flex items-center mb-3 sm:mb-5">
-                <Star
-                  className="w-5 h-5 sm:w-7 sm:h-7"
-                  style={{ color: colorPalette.primary }}
-                />
-                <h3
-                  className="text-lg sm:text-xl font-merriweather font-bold ml-2 sm:ml-3"
-                  style={{ color: colorPalette.text }}
-                >
-                  Visi
-                </h3>
-              </div>
-              <p
-                className="text-sm sm:text-base font-inter"
-                style={{ color: colorPalette.text }}
-              >
-                Menjadikan Padukuhan Pakel sebagai padukuhan mandiri, sejahtera,
-                dan berkelanjutan melalui potensi pertanian dan kearifan lokal.
-              </p>
-            </motion.div>
-            <motion.div
-              className="flex-1 bg-white rounded-2xl shadow-lg p-5 sm:p-7"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              viewport={{ once: true }}
-            >
-              <div className="flex items-center mb-3 sm:mb-5">
-                <Leaf
-                  className="w-5 h-5 sm:w-7 sm:h-7"
-                  style={{ color: colorPalette.primary }}
-                />
-                <h3
-                  className="text-lg sm:text-xl font-merriweather font-bold ml-2 sm:ml-3"
-                  style={{ color: colorPalette.text }}
-                >
-                  Misi
-                </h3>
-              </div>
-              <ul
-                className="text-sm sm:text-base font-inter space-y-1.5"
-                style={{ color: colorPalette.text }}
-              >
-                <li className="flex items-start">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full mt-1.5 mr-1.5 sm:mr-2.5"
-                    style={{ backgroundColor: colorPalette.secondary }}
-                  />
-                  Mengembangkan pertanian berkelanjutan
-                </li>
-                <li className="flex items-start">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full mt-1.5 mr-1.5 sm:mr-2.5"
-                    style={{ backgroundColor: colorPalette.secondary }}
-                  />
-                  Memberdayakan UMKM lokal
-                </li>
-                <li className="flex items-start">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full mt-1.5 mr-1.5 sm:mr-2.5"
-                    style={{ backgroundColor: colorPalette.secondary }}
-                  />
-                  Meningkatkan kesejahteraan masyarakat
-                </li>
-              </ul>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Statistik Section */}
       <section
         className="py-10 sm:py-14 md:py-20"
         style={{ backgroundColor: colorPalette.accent }}
@@ -447,15 +612,15 @@ const Homepage = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-5 sm:gap-7">
             {[
               { label: "Jumlah Penduduk", value: 500, icon: Users },
-              { label: "Jumlah UMKM", value: 25, icon: Briefcase },
               { label: "Luas Lahan", value: "150 Ha", icon: Leaf },
-              { label: "Jumlah RW", value: 3, icon: Home },
+              { label: "Jumlah RW", value: 4, icon: Home },
+              { label: "Jumlah RT", value: 6, icon: MapPin },
             ].map((stat, index) => (
               <motion.div
                 key={index}
                 className="flex items-center space-x-2 sm:space-x-3"
                 initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: index * 0.2 }}
                 viewport={{ once: true }}
               >
@@ -468,7 +633,7 @@ const Homepage = () => {
                     className="text-xl sm:text-2xl md:text-3xl font-merriweather font-bold"
                     style={{ color: colorPalette.text }}
                     initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: 1 }}
                   >
                     {stat.value}
@@ -486,7 +651,6 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* UMKM Section */}
       <section id="umkm" className="py-10 sm:py-14 md:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
@@ -494,7 +658,7 @@ const Homepage = () => {
               className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
@@ -503,7 +667,7 @@ const Homepage = () => {
             <p
               className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
@@ -522,7 +686,7 @@ const Homepage = () => {
                   key={product.id}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden"
                   initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                   viewport={{ once: true }}
                   whileHover={{ y: -10 }}
@@ -578,7 +742,7 @@ const Homepage = () => {
           <motion.div
             className="text-center mt-6 sm:mt-12"
             initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
@@ -598,11 +762,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Peta Padukuhan */}
       <section
         id="peta"
         className="py-10 sm:py-14 md:py-20"
-        style={{ backgroundColor: `${colorPalette.accent}10` }}
+        style={{ backgroundColor: `rgba(154, 230, 180, 0.1)` }}
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
@@ -610,7 +773,7 @@ const Homepage = () => {
               className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
@@ -619,7 +782,7 @@ const Homepage = () => {
             <p
               className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
@@ -629,7 +792,7 @@ const Homepage = () => {
           <motion.div
             className="bg-white rounded-2xl shadow-lg overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
@@ -659,7 +822,6 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Galeri Section */}
       <section id="galeri" className="py-10 sm:py-14 md:py-20">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
@@ -667,7 +829,7 @@ const Homepage = () => {
               className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
@@ -676,7 +838,7 @@ const Homepage = () => {
             <p
               className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
@@ -691,7 +853,7 @@ const Homepage = () => {
             <motion.div
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5"
               initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
@@ -700,7 +862,7 @@ const Homepage = () => {
                   key={index}
                   className="relative overflow-hidden rounded-2xl shadow-lg"
                   initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                   whileHover={{ scale: 1.05 }}
                 >
@@ -734,7 +896,7 @@ const Homepage = () => {
           <motion.div
             className="text-center mt-6 sm:mt-12"
             initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
@@ -754,11 +916,10 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Berita & Pengumuman */}
       <section
         id="berita"
         className="py-10 sm:py-14 md:py-20"
-        style={{ backgroundColor: `${colorPalette.accent}10` }}
+        style={{ backgroundColor: `rgba(154, 230, 180, 0.1)` }}
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <motion.div className="text-center mb-6 sm:mb-12">
@@ -766,7 +927,7 @@ const Homepage = () => {
               className="text-2xl sm:text-3xl md:text-4xl font-merriweather font-bold"
               style={{ color: colorPalette.text }}
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
@@ -775,7 +936,7 @@ const Homepage = () => {
             <p
               className="text-sm sm:text-base text-gray-600 mt-1.5 max-w-md mx-auto"
               initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               viewport={{ once: true }}
             >
@@ -793,7 +954,7 @@ const Homepage = () => {
                   key={index}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden"
                   initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.2 }}
                   viewport={{ once: true }}
                   whileHover={{ y: -10 }}
@@ -811,19 +972,21 @@ const Homepage = () => {
                       className="px-1.5 py-0.5 rounded-full text-xs font-inter font-semibold text-white mb-2 sm:mb-3 inline-block"
                       style={{ backgroundColor: colorPalette.primary }}
                     >
-                      {news.type}
+                      {news.type || "Berita"}
                     </div>
                     <h3
                       className="text-sm sm:text-base md:text-lg font-merriweather font-bold mb-1.5 sm:mb-2"
                       style={{ color: colorPalette.text }}
                     >
-                      {news.title}
+                      {news.title || "Judul tidak tersedia"}
                     </h3>
                     <p
                       className="text-xs sm:text-sm font-inter mb-2 sm:mb-3"
                       style={{ color: colorPalette.text }}
                     >
-                      {news.content?.substring(0, 100) + "..."}
+                      {news.content
+                        ? stripHtml(news.content).substring(0, 100) + "..."
+                        : "Konten tidak tersedia"}
                     </p>
                     <div className="flex items-center justify-between">
                       <span
@@ -850,7 +1013,7 @@ const Homepage = () => {
           <motion.div
             className="text-center mt-6 sm:mt-12"
             initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
@@ -870,7 +1033,6 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Scroll to Top Button */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
