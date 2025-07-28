@@ -270,7 +270,7 @@ const Homepage = () => {
           .tentang-image {
             width: 100%;
             height: 12rem;
-            object-fit vidro: cover;
+            object-fit: cover;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
           }
@@ -538,7 +538,7 @@ const Homepage = () => {
                 Kabupaten Gunung Kidul, Daerah Istimewa Yogyakarta, yang dikenal
                 sebagai wilayah pedesaan dengan potensi alam karst khas Gunung
                 Kidul. Dengan estimasi populasi sekitar{" "}
-                <span className="highlight-text">500 jiwa</span>, padukuhan ini
+                <span className="highlight-text">621 jiwa</span>, padukuhan ini
                 bergantung pada sektor pertanian tadah hujan, menghasilkan
                 komoditas utama seperti{" "}
                 <span className="highlight-text">jagung dan singkong</span> yang
@@ -589,7 +589,7 @@ const Homepage = () => {
               viewport={{ once: true }}
             >
               <img
-                src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&h=400&fit=crop"
+                src="/public/profil/profil1.jpg"
                 alt="Kehidupan Padukuhan Pakel"
                 className="tentang-image"
               />
@@ -611,8 +611,8 @@ const Homepage = () => {
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12">
           <div className="flex flex-col md:flex-row justify-between items-center gap-5 sm:gap-7">
             {[
-              { label: "Jumlah Penduduk", value: 500, icon: Users },
-              { label: "Luas Lahan", value: "150 Ha", icon: Leaf },
+              { label: "Jumlah Penduduk", value: 621, icon: Users },
+              { label: "Luas Lahan", value: "125 Ha", icon: Leaf },
               { label: "Jumlah RW", value: 4, icon: Home },
               { label: "Jumlah RT", value: 6, icon: MapPin },
             ].map((stat, index) => (
@@ -993,7 +993,7 @@ const Homepage = () => {
                         className="font-inter text-xs sm:text-xs"
                         style={{ color: colorPalette.text }}
                       >
-                        {formatDate(news.createdAt)}
+                        {formatDate(news.date)}
                       </span>
                       <Link to={`/blog/${news.id}`}>
                         <motion.a

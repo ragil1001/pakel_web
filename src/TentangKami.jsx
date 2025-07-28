@@ -188,12 +188,6 @@ const TentangKami = () => {
                   kami kepada Anda.
                 </p>
                 <p className="leading-relaxed">
-                  Website padukuhan ini didirikan atas dukungan Kementerian
-                  Komunikasi dan Informatika Republik Indonesia. Keberadaannya
-                  diharapkan dapat mempermudah masyarakat mendapatkan informasi
-                  yang bermanfaat.
-                </p>
-                <p className="leading-relaxed">
                   Dalam memberikan layanan, kami selalu berusaha memberikan yang
                   terbaik. Semoga website padukuhan ini dapat memberi banyak
                   manfaat bagi seluruh masyarakat.
@@ -254,41 +248,65 @@ const TentangKami = () => {
               </h3>
               <div className="text-gray-600 font-inter text-sm sm:text-base space-y-6">
                 <p className="leading-relaxed">
-                  Padukuhan Pakel, yang terletak di Desa Planjan, Kecamatan
-                  Saptosari, Kabupaten Gunung Kidul, Yogyakarta, adalah
-                  komunitas agraris yang berkembang di tengah lanskap karst yang
-                  menantang. Dengan populasi sekitar 500 jiwa, kehidupan
-                  masyarakat berpusat pada pertanian tadah hujan, menghasilkan
-                  jagung dan singkong sebagai komoditas utama, sebagaimana telah
-                  dijelaskan sebelumnya. Selain itu, masyarakat Pakel dikenal
-                  akan ketangguhannya dalam menghadapi tantangan lingkungan,
-                  seperti kekeringan musiman, melalui sistem irigasi tradisional
-                  dan kerja sama komunal.
+                  <span
+                    style={{ fontWeight: "bold", color: colorPalette.primary }}
+                  >
+                    Padukuhan Pakel
+                  </span>{" "}
+                  merupakan salah satu dusun di Desa Planjan, Kecamatan
+                  Saptosari, Kabupaten Gunung Kidul, Daerah Istimewa Yogyakarta,
+                  yang dikenal sebagai wilayah pedesaan dengan potensi alam
+                  karst khas Gunung Kidul. Dengan estimasi populasi sekitar{" "}
+                  <span
+                    style={{ fontWeight: "bold", color: colorPalette.primary }}
+                  >
+                    621 jiwa
+                  </span>
+                  , padukuhan ini bergantung pada sektor pertanian tadah hujan,
+                  menghasilkan komoditas utama seperti{" "}
+                  <span
+                    style={{ fontWeight: "bold", color: colorPalette.primary }}
+                  >
+                    jagung dan singkong
+                  </span>{" "}
+                  yang menjadi andalan masyarakat setempat.
                 </p>
                 <p className="leading-relaxed">
-                  Kehidupan sosial di Pakel ditandai dengan semangat gotong
-                  royong yang kuat, terlihat dari kegiatan seperti pasar
-                  mingguan, kerja bakti, dan perayaan tradisi Jawa seperti{" "}
+                  Di samping pertanian, aktivitas{" "}
                   <span
                     style={{ fontWeight: "bold", color: colorPalette.primary }}
                   >
-                    rasulan
+                    UMKM lokal
                   </span>{" "}
-                  dan{" "}
+                  turut mendukung perekonomian, termasuk pengolahan hasil bumi
+                  dan perdagangan kecil-kecilan, yang mencerminkan nilai gotong
+                  royong serta adaptasi terhadap kondisi tanah kapur. Terletak
+                  di tengah lanskap bukit dan gua yang memesona, Padukuhan Pakel
+                  menjaga harmoni antara{" "}
                   <span
                     style={{ fontWeight: "bold", color: colorPalette.primary }}
                   >
-                    sadranan
+                    tradisi Jawa
                   </span>
-                  . UMKM lokal tidak hanya mengolah hasil pertanian, tetapi juga
-                  menghasilkan kerajinan tangan dan produk kuliner seperti tiwul
-                  dan gethuk, yang semakin berkembang dengan adopsi teknologi
-                  digital untuk promosi. Infrastruktur seperti jalan desa, balai
-                  dusun, dan posyandu terus ditingkatkan, didukung oleh
-                  pembangunan Jalur Jalan Lintas Selatan (JJLS) pada 2024-2025,
-                  yang membuka akses ke destinasi wisata alam seperti gua karst
-                  dan perbukitan hijau, menarik minat wisatawan untuk menikmati
-                  keindahan alam dan budaya lokal yang autentik.
+                  , kehidupan komunal, dan upaya pembangunan berkelanjutan,
+                  mengajak pengunjung untuk menikmati keaslian budaya serta
+                  keramahan warganya.
+                </p>
+                <p className="leading-relaxed">
+                  Masyarakat Padukuhan Pakel juga aktif dalam menjaga
+                  kelestarian lingkungan karst melalui program penanaman pohon
+                  dan pengelolaan air tanah yang berkelanjutan, mengingat
+                  wilayah ini rentan terhadap kekeringan. Selain itu, kegiatan
+                  pendidikan non-formal seperti kelompok belajar anak-anak dan
+                  pelatihan keterampilan pertanian organik menjadi bagian
+                  penting dari kehidupan sehari-hari, membantu generasi muda
+                  mempersiapkan diri menghadapi perubahan iklim. Potensi wisata
+                  alam di Pakel, seperti jalur trekking bukit kapur dan
+                  eksplorasi gua kecil di sekitar padukuhan, semakin
+                  dikembangkan secara mandiri oleh warga untuk mendukung ekonomi
+                  berbasis ekowisata, sambil mempertahankan nilai-nilai adat
+                  seperti ruwatan dan wayang kulit yang rutin digelar pada
+                  acara-acara khusus.
                 </p>
               </div>
             </motion.div>
@@ -302,7 +320,7 @@ const TentangKami = () => {
             >
               <div className="relative overflow-hidden rounded-2xl shadow-lg group">
                 <img
-                  src="https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=600&h=450&fit=crop"
+                  src="/profil/profil1.jpg"
                   alt="Pemandangan Padukuhan Pakel"
                   className="profile-image transition-transform duration-500 group-hover:scale-110"
                 />
@@ -318,7 +336,7 @@ const TentangKami = () => {
                   viewport={{ once: true }}
                 >
                   <img
-                    src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=300&fit=crop"
+                    src="/profil/profil2.png"
                     alt="Hasil Pertanian"
                     className="thumbnail-image transition-transform duration-500 group-hover:scale-110"
                   />
@@ -333,7 +351,7 @@ const TentangKami = () => {
                   viewport={{ once: true }}
                 >
                   <img
-                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=300&fit=crop"
+                    src="/profil/profil3.png"
                     alt="Kehidupan Desa"
                     className="thumbnail-image transition-transform duration-500 group-hover:scale-110"
                   />
