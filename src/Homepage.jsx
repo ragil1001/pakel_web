@@ -589,7 +589,7 @@ const Homepage = () => {
               viewport={{ once: true }}
             >
               <img
-                src="/public/profil/profil1.jpg"
+                src="/profil/profil1.jpg"
                 alt="Kehidupan Padukuhan Pakel"
                 className="tentang-image"
               />
