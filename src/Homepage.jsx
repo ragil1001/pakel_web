@@ -293,25 +293,12 @@ const Homepage = () => {
       >
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/60 z-10" />
-          <video
-            className="w-full h-full object-cover transform-gpu"
-            autoPlay
-            loop
-            muted
-            playsInline
-            aria-label="Background video of Padukuhan Pakel"
-            onError={() =>
-              console.error(
-                "Video failed to load. Check path: /videos/hero.mp4"
-              )
-            }
-          >
-            <source src="/videos/hero.mp4" type="video/mp4" />
-            <img
-              src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920&h=1080&fit=crop"
-              alt="Fallback Pemandangan Padukuhan Pakel"
-            />
-          </video>
+          <img
+  src="/profil/profil1.jpg"
+  alt="Pemandangan asli Padukuhan Pakel"
+  className="w-full h-full object-cover transform-gpu"
+  loading="eager"
+/>
         </div>
         <div className="relative z-20 text-center text-white px-4 sm:px-4 md:px-6 max-w-2xl mx-auto">
           <motion.h1
@@ -389,8 +376,10 @@ const Homepage = () => {
             >
               <div className="relative">
                 <motion.button
-                  onClick={handleVideoOpen}
-                  className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white/60 backdrop-blur-sm"
+                  disabled
+                  aria-disabled="true"
+                  title="Video dokumenter belum tersedia pada deployment publik"
+                  className="relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-white/30 opacity-60 cursor-not-allowed"
                   style={{
                     backgroundColor: "rgba(255, 255, 255, 0.1)",
                     color: "white",
@@ -421,7 +410,7 @@ const Homepage = () => {
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
                 >
-                  Tonton Dokumenter
+                  Dokumenter belum tersedia
                 </motion.p>
                 <motion.p
                   className="text-xs sm:text-sm font-inter text-white/80 mt-0.5"
