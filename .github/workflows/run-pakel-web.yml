@@ -1,0 +1,167 @@
+name: Run Original PAKEL Web
+
+on:
+  push:
+    branches:
+      - chatgpt/deploy-pakel-web
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout original repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build original React application
+        shell: bash
+        run: |
+          npm ci
+          npm run build
+          npm install --no-save --ignore-scripts puppeteer-core@24.16.0 serve@14.2.4
+
+      - name: Start original Vite build
+        shell: bash
+        run: |
+          mkdir -p runtime/screenshots
+          npx serve -s dist -l 4173 > runtime/server.log 2>&1 &
+          echo $! > runtime/server.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat runtime/server.log
+          exit 1
+
+      - name: Capture original Firebase-backed pages
+        shell: bash
+        run: |
+          cat > capture.mjs <<'NODE'
+          import puppeteer from 'puppeteer-core';
+          import { execSync } from 'node:child_process';
+          import { writeFileSync } from 'node:fs';
+
+          const executablePath = execSync(
+            'command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium',
+            { encoding: 'utf8' }
+          ).trim();
+
+          const browser = await puppeteer.launch({
+            executablePath,
+            headless: true,
+            args: ['--no-sandbox', '--disable-dev-shm-usage']
+          });
+
+          const page = await browser.newPage();
+          const errors = [];
+          const failedRequests = [];
+
+          page.on('console', msg => {
+            if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+          });
+          page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+          page.on('requestfailed', request => {
+            const failure = request.failure();
+            failedRequests.push(`${request.method()} ${request.url()} :: ${failure?.errorText || 'failed'}`);
+          });
+
+          await page.setRequestInterception(true);
+          page.on('request', request => {
+            if (request.resourceType() === 'media') request.abort();
+            else request.continue();
+          });
+
+          async function settle(ms = 4500) {
+            await new Promise(resolve => setTimeout(resolve, ms));
+          }
+
+          async function capture(path, file, viewport, fullPage = true) {
+            await page.setViewport(viewport);
+            await page.goto(`http://127.0.0.1:4173${path}`, {
+              waitUntil: 'networkidle2',
+              timeout: 90000
+            });
+            await settle();
+            await page.screenshot({ path: `runtime/screenshots/${file}`, fullPage });
+            return await page.evaluate(() => ({
+              path: location.pathname,
+              title: document.title,
+              bodyText: document.body.innerText.slice(0, 1200),
+              images: document.images.length,
+              umkmLinks: document.querySelectorAll('a[href^="/umkm/"]').length,
+              blogLinks: document.querySelectorAll('a[href^="/blog/"]').length,
+              errorShown: document.body.innerText.includes('Gagal memuat data')
+            }));
+          }
+
+          const desktop = { width: 1440, height: 1000, deviceScaleFactor: 1 };
+          const mobile = { width: 430, height: 932, deviceScaleFactor: 1 };
+          const results = {};
+
+          results.homeDesktop = await capture('/', 'pakel-home-desktop.png', desktop, false);
+          results.homeFullDesktop = await capture('/', 'pakel-home-full-desktop.png', desktop, true);
+          results.aboutDesktop = await capture('/tentang', 'pakel-about-desktop.png', desktop, true);
+          results.umkmDesktop = await capture('/umkm', 'pakel-umkm-desktop.png', desktop, true);
+          results.galleryDesktop = await capture('/galeri', 'pakel-gallery-desktop.png', desktop, true);
+          results.blogDesktop = await capture('/blog', 'pakel-blog-desktop.png', desktop, true);
+          results.homeMobile = await capture('/', 'pakel-home-mobile.png', mobile, true);
+          results.umkmMobile = await capture('/umkm', 'pakel-umkm-mobile.png', mobile, true);
+
+          writeFileSync('runtime/page-summary.json', JSON.stringify(results, null, 2));
+          writeFileSync('runtime/browser-errors.json', JSON.stringify(errors, null, 2));
+          writeFileSync('runtime/failed-requests.json', JSON.stringify(failedRequests, null, 2));
+
+          const pages = Object.values(results);
+          if (pages.some(item => item.errorShown)) {
+            throw new Error('Firebase-backed page displayed data loading failure');
+          }
+          if (results.umkmDesktop.umkmLinks === 0) {
+            throw new Error('No live UMKM records were rendered');
+          }
+          if (results.blogDesktop.blogLinks === 0) {
+            throw new Error('No live blog records were rendered');
+          }
+
+          await browser.close();
+          NODE
+          node capture.mjs
+
+      - name: Verify build and screenshots
+        shell: bash
+        run: |
+          test -f dist/index.html
+          test -s runtime/screenshots/pakel-home-desktop.png
+          test -s runtime/screenshots/pakel-home-mobile.png
+          test -s runtime/screenshots/pakel-umkm-desktop.png
+          test -s runtime/screenshots/pakel-gallery-desktop.png
+          test -s runtime/screenshots/pakel-blog-desktop.png
+          jq -e '.umkmDesktop.umkmLinks > 0 and .blogDesktop.blogLinks > 0' runtime/page-summary.json
+
+      - name: Stop local server
+        if: always()
+        shell: bash
+        run: |
+          test -f runtime/server.pid && kill "$(cat runtime/server.pid)" || true
+
+      - name: Upload runtime verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: pakel_web-runtime-verification
+          path: runtime
+          retention-days: 90
+
+      - name: Upload original Vite build
+        uses: actions/upload-artifact@v4
+        with:
+          name: pakel_web-vite-dist
+          path: dist
+          retention-days: 90
