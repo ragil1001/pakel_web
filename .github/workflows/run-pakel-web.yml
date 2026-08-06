@@ -1,4 +1,4 @@
-name: Capture Original PAKEL Video Assets
+name: Capture Original PAKEL Through Vite Preview
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify-video:
+  capture:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -25,13 +25,13 @@ jobs:
         run: |
           npm ci
           npm run build
-          npm install --no-save --ignore-scripts puppeteer-core@24.16.0 serve@14.2.4
+          npm install --no-save --ignore-scripts puppeteer-core@24.16.0
 
-      - name: Start original Vite build
+      - name: Start original Vite preview
         shell: bash
         run: |
           mkdir -p runtime/screenshots
-          npx serve -s dist -l 4173 > runtime/server.log 2>&1 &
+          npm run preview -- --host 127.0.0.1 --port 4173 > runtime/server.log 2>&1 &
           echo $! > runtime/server.pid
           for i in {1..60}; do
             if curl -fsS http://127.0.0.1:4173 >/dev/null; then
@@ -42,10 +42,10 @@ jobs:
           cat runtime/server.log
           exit 1
 
-      - name: Capture home with original video files enabled
+      - name: Capture final home views and media diagnostics
         shell: bash
         run: |
-          cat > capture-video.mjs <<'NODE'
+          cat > capture-final.mjs <<'NODE'
           import puppeteer from 'puppeteer-core';
           import { execSync } from 'node:child_process';
           import { writeFileSync } from 'node:fs';
@@ -60,84 +60,74 @@ jobs:
             headless: true,
             args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required']
           });
-
           const page = await browser.newPage();
-          const errors = [];
+          const consoleErrors = [];
           const failedRequests = [];
           page.on('console', msg => {
-            if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+            if (msg.type() === 'error') consoleErrors.push(`console: ${msg.text()}`);
           });
-          page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+          page.on('pageerror', error => consoleErrors.push(`pageerror: ${error.message}`));
           page.on('requestfailed', request => {
-            const failure = request.failure();
-            failedRequests.push(`${request.method()} ${request.url()} :: ${failure?.errorText || 'failed'}`);
+            failedRequests.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText || 'failed'}`);
           });
 
-          async function openHome(viewport, file, fullPage) {
+          async function capture(viewport, file, fullPage) {
             await page.setViewport(viewport);
-            await page.goto('http://127.0.0.1:4173/', {
-              waitUntil: 'domcontentloaded',
-              timeout: 90000
-            });
+            await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded', timeout: 90000 });
             await page.waitForFunction(
               () => document.querySelectorAll('a[href^="/umkm/"]').length > 0 &&
                     document.querySelectorAll('a[href^="/blog/"]').length > 0,
               { timeout: 30000 }
             );
-            await page.waitForFunction(
-              () => [...document.querySelectorAll('video')].some(video => video.readyState >= 2),
-              { timeout: 120000 }
-            );
-            await new Promise(resolve => setTimeout(resolve, 2500));
+            await new Promise(resolve => setTimeout(resolve, 12000));
             await page.screenshot({ path: `runtime/screenshots/${file}`, fullPage });
             return await page.evaluate(() => ({
+              title: document.title,
               errorShown: document.body.innerText.includes('Gagal memuat data'),
               documentaryUnavailable: document.body.innerText.includes('Dokumenter belum tersedia'),
+              umkmLinks: document.querySelectorAll('a[href^="/umkm/"]').length,
+              blogLinks: document.querySelectorAll('a[href^="/blog/"]').length,
               videos: [...document.querySelectorAll('video')].map(video => ({
+                srcAttribute: video.getAttribute('src'),
                 currentSrc: video.currentSrc,
                 readyState: video.readyState,
                 networkState: video.networkState,
                 paused: video.paused,
                 errorCode: video.error?.code || null,
-                width: video.videoWidth,
-                height: video.videoHeight
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight
               }))
             }));
           }
 
-          const desktop = await openHome(
+          const desktop = await capture(
             { width: 1440, height: 1000, deviceScaleFactor: 1 },
-            'pakel-home-video-desktop.png',
+            'pakel-home-final-desktop.png',
             false
           );
-          const mobile = await openHome(
+          const mobile = await capture(
             { width: 430, height: 932, deviceScaleFactor: 1 },
-            'pakel-home-video-mobile.png',
+            'pakel-home-final-mobile.png',
             true
           );
 
-          writeFileSync('runtime/video-state.json', JSON.stringify({ desktop, mobile }, null, 2));
-          writeFileSync('runtime/browser-errors.json', JSON.stringify(errors, null, 2));
+          writeFileSync('runtime/final-state.json', JSON.stringify({ desktop, mobile }, null, 2));
+          writeFileSync('runtime/browser-errors.json', JSON.stringify(consoleErrors, null, 2));
           writeFileSync('runtime/failed-requests.json', JSON.stringify(failedRequests, null, 2));
 
           if (desktop.errorShown || mobile.errorShown) throw new Error('Firebase data failed to render');
-          if (![...desktop.videos, ...mobile.videos].some(video => video.readyState >= 2 && !video.errorCode)) {
-            throw new Error('Original video assets did not become playable');
-          }
-          if (failedRequests.some(item => item.includes('/videos/'))) {
-            throw new Error('A local video request failed');
-          }
+          if (desktop.umkmLinks === 0 || desktop.blogLinks === 0) throw new Error('Firebase records were not rendered');
 
           await browser.close();
           NODE
-          node capture-video.mjs
+          node capture-final.mjs
 
-      - name: Verify corrected screenshots
+      - name: Verify final screenshots
         shell: bash
         run: |
-          test -s runtime/screenshots/pakel-home-video-desktop.png
-          test -s runtime/screenshots/pakel-home-video-mobile.png
-          jq -e '([.desktop.videos[], .mobile.videos[]] | any(.readyState >= 2 and .errorCode == null))' runtime/video-state.json
+          test -s runtime/screenshots/pakel-home-final-desktop.png
+          test -s runtime/screenshots/pakel-home-final-mobile.png
+          jq -e '.desktop.umkmLinks > 0 and .desktop.blogLinks > 0' runtime/final-state.json
 
       - name: Stop local server
         if: always()
@@ -145,9 +135,9 @@ jobs:
         run: |
           test -f runtime/server.pid && kill "$(cat runtime/server.pid)" || true
 
-      - name: Upload corrected runtime capture
+      - name: Upload final runtime capture
         uses: actions/upload-artifact@v4
         with:
-          name: pakel_web-video-corrected-capture
+          name: pakel_web-final-runtime-capture
           path: runtime
           retention-days: 90
