@@ -1,4 +1,4 @@
-name: Run Original PAKEL Web
+name: Capture Original PAKEL Video Assets
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify:
+  verify-video:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -42,10 +42,10 @@ jobs:
           cat runtime/server.log
           exit 1
 
-      - name: Capture original Firebase-backed pages
+      - name: Capture home with original video files enabled
         shell: bash
         run: |
-          cat > capture.mjs <<'NODE'
+          cat > capture-video.mjs <<'NODE'
           import puppeteer from 'puppeteer-core';
           import { execSync } from 'node:child_process';
           import { writeFileSync } from 'node:fs';
@@ -58,13 +58,12 @@ jobs:
           const browser = await puppeteer.launch({
             executablePath,
             headless: true,
-            args: ['--no-sandbox', '--disable-dev-shm-usage']
+            args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required']
           });
 
           const page = await browser.newPage();
           const errors = [];
           const failedRequests = [];
-
           page.on('console', msg => {
             if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
           });
@@ -74,77 +73,71 @@ jobs:
             failedRequests.push(`${request.method()} ${request.url()} :: ${failure?.errorText || 'failed'}`);
           });
 
-          await page.setRequestInterception(true);
-          page.on('request', request => {
-            if (request.resourceType() === 'media') request.abort();
-            else request.continue();
-          });
-
-          async function settle(ms = 4500) {
-            await new Promise(resolve => setTimeout(resolve, ms));
-          }
-
-          async function capture(path, file, viewport, fullPage = true) {
+          async function openHome(viewport, file, fullPage) {
             await page.setViewport(viewport);
-            await page.goto(`http://127.0.0.1:4173${path}`, {
-              waitUntil: 'networkidle2',
+            await page.goto('http://127.0.0.1:4173/', {
+              waitUntil: 'domcontentloaded',
               timeout: 90000
             });
-            await settle();
+            await page.waitForFunction(
+              () => document.querySelectorAll('a[href^="/umkm/"]').length > 0 &&
+                    document.querySelectorAll('a[href^="/blog/"]').length > 0,
+              { timeout: 30000 }
+            );
+            await page.waitForFunction(
+              () => [...document.querySelectorAll('video')].some(video => video.readyState >= 2),
+              { timeout: 120000 }
+            );
+            await new Promise(resolve => setTimeout(resolve, 2500));
             await page.screenshot({ path: `runtime/screenshots/${file}`, fullPage });
             return await page.evaluate(() => ({
-              path: location.pathname,
-              title: document.title,
-              bodyText: document.body.innerText.slice(0, 1200),
-              images: document.images.length,
-              umkmLinks: document.querySelectorAll('a[href^="/umkm/"]').length,
-              blogLinks: document.querySelectorAll('a[href^="/blog/"]').length,
-              errorShown: document.body.innerText.includes('Gagal memuat data')
+              errorShown: document.body.innerText.includes('Gagal memuat data'),
+              documentaryUnavailable: document.body.innerText.includes('Dokumenter belum tersedia'),
+              videos: [...document.querySelectorAll('video')].map(video => ({
+                currentSrc: video.currentSrc,
+                readyState: video.readyState,
+                networkState: video.networkState,
+                paused: video.paused,
+                errorCode: video.error?.code || null,
+                width: video.videoWidth,
+                height: video.videoHeight
+              }))
             }));
           }
 
-          const desktop = { width: 1440, height: 1000, deviceScaleFactor: 1 };
-          const mobile = { width: 430, height: 932, deviceScaleFactor: 1 };
-          const results = {};
+          const desktop = await openHome(
+            { width: 1440, height: 1000, deviceScaleFactor: 1 },
+            'pakel-home-video-desktop.png',
+            false
+          );
+          const mobile = await openHome(
+            { width: 430, height: 932, deviceScaleFactor: 1 },
+            'pakel-home-video-mobile.png',
+            true
+          );
 
-          results.homeDesktop = await capture('/', 'pakel-home-desktop.png', desktop, false);
-          results.homeFullDesktop = await capture('/', 'pakel-home-full-desktop.png', desktop, true);
-          results.aboutDesktop = await capture('/tentang', 'pakel-about-desktop.png', desktop, true);
-          results.umkmDesktop = await capture('/umkm', 'pakel-umkm-desktop.png', desktop, true);
-          results.galleryDesktop = await capture('/galeri', 'pakel-gallery-desktop.png', desktop, true);
-          results.blogDesktop = await capture('/blog', 'pakel-blog-desktop.png', desktop, true);
-          results.homeMobile = await capture('/', 'pakel-home-mobile.png', mobile, true);
-          results.umkmMobile = await capture('/umkm', 'pakel-umkm-mobile.png', mobile, true);
-
-          writeFileSync('runtime/page-summary.json', JSON.stringify(results, null, 2));
+          writeFileSync('runtime/video-state.json', JSON.stringify({ desktop, mobile }, null, 2));
           writeFileSync('runtime/browser-errors.json', JSON.stringify(errors, null, 2));
           writeFileSync('runtime/failed-requests.json', JSON.stringify(failedRequests, null, 2));
 
-          const pages = Object.values(results);
-          if (pages.some(item => item.errorShown)) {
-            throw new Error('Firebase-backed page displayed data loading failure');
+          if (desktop.errorShown || mobile.errorShown) throw new Error('Firebase data failed to render');
+          if (![...desktop.videos, ...mobile.videos].some(video => video.readyState >= 2 && !video.errorCode)) {
+            throw new Error('Original video assets did not become playable');
           }
-          if (results.umkmDesktop.umkmLinks === 0) {
-            throw new Error('No live UMKM records were rendered');
-          }
-          if (results.blogDesktop.blogLinks === 0) {
-            throw new Error('No live blog records were rendered');
+          if (failedRequests.some(item => item.includes('/videos/'))) {
+            throw new Error('A local video request failed');
           }
 
           await browser.close();
           NODE
-          node capture.mjs
+          node capture-video.mjs
 
-      - name: Verify build and screenshots
+      - name: Verify corrected screenshots
         shell: bash
         run: |
-          test -f dist/index.html
-          test -s runtime/screenshots/pakel-home-desktop.png
-          test -s runtime/screenshots/pakel-home-mobile.png
-          test -s runtime/screenshots/pakel-umkm-desktop.png
-          test -s runtime/screenshots/pakel-gallery-desktop.png
-          test -s runtime/screenshots/pakel-blog-desktop.png
-          jq -e '.umkmDesktop.umkmLinks > 0 and .blogDesktop.blogLinks > 0' runtime/page-summary.json
+          test -s runtime/screenshots/pakel-home-video-desktop.png
+          test -s runtime/screenshots/pakel-home-video-mobile.png
+          jq -e '([.desktop.videos[], .mobile.videos[]] | any(.readyState >= 2 and .errorCode == null))' runtime/video-state.json
 
       - name: Stop local server
         if: always()
@@ -152,16 +145,9 @@ jobs:
         run: |
           test -f runtime/server.pid && kill "$(cat runtime/server.pid)" || true
 
-      - name: Upload runtime verification
+      - name: Upload corrected runtime capture
         uses: actions/upload-artifact@v4
         with:
-          name: pakel_web-runtime-verification
+          name: pakel_web-video-corrected-capture
           path: runtime
-          retention-days: 90
-
-      - name: Upload original Vite build
-        uses: actions/upload-artifact@v4
-        with:
-          name: pakel_web-vite-dist
-          path: dist
           retention-days: 90
